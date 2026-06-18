@@ -1004,6 +1004,14 @@ class MainBot(ZaloAPI):
     # ══════════════════════════════════════════════════
     def onMessage(self, mid, author_id, message, message_object, thread_id, thread_type):
         update_activity()
+        
+        try:
+            msg_str = str(message) if message else ""
+            if not msg_str and message_object and message_object.content:
+                msg_str = str(message_object.content)
+            logger.info(f"📨 Tin nhắn từ {author_id} | Box {thread_id} ({thread_type.name}): {msg_str}")
+        except:
+            pass
 
         if is_sleeping():
             try:
@@ -1110,7 +1118,7 @@ if __name__ == "__main__":
         print("\x1b[1;32m       ⚡ VANDAT BOT SHUTTING DOWN GRACEFULLY ⚡\x1b[0m")
         print("\x1b[1;35m           👋 Tạm biệt và hẹn gặp lại! 👋\x1b[0m")
         print("\x1b[1;36m" + "="*55 + "\x1b[0m\n")
-        sys.exit(0)
+        os._exit(0)
 
     signal.signal(signal.SIGINT, graceful_exit)
     signal.signal(signal.SIGTERM, graceful_exit)
