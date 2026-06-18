@@ -7,7 +7,7 @@ import time
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Tạo nhóm mới",
     'power': "Admin"
 }

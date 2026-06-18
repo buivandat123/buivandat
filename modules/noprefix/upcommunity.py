@@ -5,7 +5,7 @@ from datetime import datetime
 
 des = {
     'version': "1.2.0",
-    'credits': "Light & Yuta Bot",
+    'credits': "kryzis X TXA",
     'description': "Nang cap nhom len Community - Khong can prefix",
     'power': "Admin"
 }

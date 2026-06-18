@@ -8,7 +8,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     'version': '1.1.0',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Chụp ảnh màn hình website',
     'power': 'Thành viên'
 }

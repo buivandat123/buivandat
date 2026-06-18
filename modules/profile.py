@@ -9,7 +9,7 @@ from modules.canvas import *
 
 des = {
     "version": "1.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Xem hồ sơ người dùng",
     "power": "Thành viên"
 }

@@ -12,7 +12,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     "version": "3.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Tự động trả lời theo từ khóa (chính xác 100%)",
     "power": "ADMIN"
 }

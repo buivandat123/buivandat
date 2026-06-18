@@ -6,7 +6,7 @@ from zlapi.models import Message
 
 des = {
     'version': '1.0.0',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Spam text từ file - delay an toàn',
     'power': 'Admin'
 }

@@ -73,7 +73,7 @@ def _mention_send(client, uid, tid, ttype, header, lines, color):
 from asset.config import PREFIX
 from asset.admin_check import is_admin
 
-des = {"version":"1.0.0","credits":"Light","description":"Cài đặt nhóm","power":"Admin"}
+des = {"version":"1.0.0","credits":"kryzis X TXA","description":"Cài đặt nhóm","power":"Admin"}
 
 CMDS = {
     "lockname":       ("blockName",    1,  "🔒 Đã khóa đổi tên & ảnh!"),

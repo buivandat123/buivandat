@@ -8,7 +8,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     "version": "1.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Tải video/audio từ YouTube",
     "power": "Thành viên"
 }

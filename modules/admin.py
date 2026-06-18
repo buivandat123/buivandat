@@ -7,7 +7,7 @@ from datetime import datetime
 from zlapi.models import Message, MultiMsgStyle, MessageStyle, ThreadType
 from modules.canvas import *
 
-des = {"version": "1.0.0", "credits": "Light", "description": "Quản lý admin bot", "power": "Owner"}
+des = {"version": "1.0.0", "credits": "kryzis X TXA", "description": "Quản lý admin bot", "power": "Owner"}
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETING_FILE = os.path.join(BASE_DIR, "asset", "seting.json")

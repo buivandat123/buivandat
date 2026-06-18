@@ -8,7 +8,7 @@ from zlapi.models import Message
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Xem thong tin nguoi dung",
     'power': "Member"
 }

@@ -13,7 +13,7 @@ from main import SubBotManager
 
 des = {
     'version': "1.0.0",
-    'credits': "TXA x ",
+    'credits': "kryzis X TXA",
     'description': "Quản lý và tạo bot con chạy cùng bot mẹ",
     'power': "Admin"
 }

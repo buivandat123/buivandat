@@ -6,7 +6,7 @@ from asset.admin_check import is_admin
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Gọi điện nhóm trên Zalo",
     'power': "Admin"
 }

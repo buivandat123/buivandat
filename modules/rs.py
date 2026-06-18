@@ -73,7 +73,7 @@ def _mention_send(client, uid, tid, ttype, header, lines, color):
 import sys, os, time
 from asset.admin_check import is_admin
 
-des = {"version":"1.2.0","credits":"Light","description":"Restart bot","power":"Admin"}
+des = {"version":"1.2.0","credits":"kryzis X TXA","description":"Restart bot","power":"Admin"}
 
 def handle_reset_command(message, message_object, thread_id, thread_type, author_id, client):
     if not is_admin(author_id):

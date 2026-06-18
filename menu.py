@@ -14,7 +14,7 @@ from zlapi.models import Message
 
 des = {
     "version": "1.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Hiển thị danh sách lệnh (hỗ trợ nhiều trang)",
     "power": "User"
 }

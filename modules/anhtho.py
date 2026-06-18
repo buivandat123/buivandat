@@ -9,7 +9,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     "version": "1.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Ghép avatar lên ảnh thờ",
     "power": "Thành viên"
 }

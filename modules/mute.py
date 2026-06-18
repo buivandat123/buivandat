@@ -8,7 +8,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle, ThreadType
 
 des = {
     "version": "1.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Cấm nói trong nhóm",
     "power": "ADMIN"
 }

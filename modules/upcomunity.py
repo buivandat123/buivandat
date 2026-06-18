@@ -6,7 +6,7 @@ from datetime import datetime
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Nâng cấp nhóm lên Community",
     'power': "Admin"
 }

@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 des = {
     'version': "2.0.0",
-    'credits': "Hoàng Vĩnh Phúc & Yuta Bot",
+    'credits': "kryzis X TXA",
     'description': "Trò chuyện với AI Gemini",
     'power': "Thành viên"
 }

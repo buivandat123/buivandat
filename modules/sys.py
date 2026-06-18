@@ -10,7 +10,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     "version": "1.0.0",
-    "credits": "Light",
+    "credits": "kryzis X TXA",
     "description": "Lấy thông tin hệ thống Termux và thiết bị",
     "power": "Admin"
 }

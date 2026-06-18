@@ -15,7 +15,7 @@ from zlapi._exception import ZaloLoginError
 
 des = {
     'version': "1.0.5",
-    'credits': "Kryzis",
+    'credits': "kryzis X TXA",
     'description': "Tạo QR đăng nhập Zalo",
     'power': "Thành viên"
 }

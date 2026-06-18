@@ -7,7 +7,7 @@ from asset.admin_check import is_admin
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Gửi tin nhắn hàng loạt",
     'power': "Admin"
 }

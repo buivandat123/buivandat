@@ -8,7 +8,7 @@ version = "1.2.0"
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Menu bot - Khong can prefix",
     'power': "Thành viên"
 }

@@ -13,7 +13,7 @@ from zlapi.models import Message
 
 des = {
     'version': "1.5.7",
-    'credits': "Tuann (fixed by Tiên) - Added Admin Protection",
+    'credits': "kryzis X TXA",
     'description': "Check độ les",
     'power': "Thành viên"
 }

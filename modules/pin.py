@@ -8,7 +8,7 @@ from zlapi.models import Message, ThreadType
 
 des = {
     'version': "1.1.0",
-    'credits': "Khanh Sang & Yuta Bot",
+    'credits': "kryzis X TXA",
     'description': "Tim anh tu Pinterest",
     'power': "Thanh vien"
 }

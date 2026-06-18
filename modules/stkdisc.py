@@ -17,7 +17,7 @@ from zlapi.models import Message
 
 des = {
     'version': "2.0.0",
-    'credits': "Hoàng Khánh Premium",
+    'credits': "kryzis X TXA",
     'description': "Tạo sticker đĩa xoay từ ảnh reply",
     'power': "Thành viên"
 }

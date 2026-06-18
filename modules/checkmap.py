@@ -10,7 +10,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     'version': '1.0.5',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Xem bản đồ vệ tinh, đường phố, địa hình với màu sắc đặc biệt',
     'power': 'Thành viên'
 }

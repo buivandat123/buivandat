@@ -15,7 +15,7 @@ from modules.canvas import *
 
 des = {
     'version': "3.2.0",
-    'credits': "Hoàng Khánh Premium",
+    'credits': "kryzis X TXA",
     'description': "Tải nhạc SoundCloud nhanh chóng.",
     'power': "Thành viên"
 }

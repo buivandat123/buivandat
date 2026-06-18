@@ -6,7 +6,7 @@ import os
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Change bot prefix",
     'power': "Admin"
 }

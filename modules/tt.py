@@ -12,7 +12,7 @@ from modules.canvas import *
 
 des = {
     "version": "1.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Tìm kiếm, xem thông tin và tải video TikTok",
     "power": "Thành viên"
 }

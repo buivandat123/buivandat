@@ -12,7 +12,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     "version": "2.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Tạo sticker xoay từ ảnh/sticker (reply)",
     "power": "USER"
 }

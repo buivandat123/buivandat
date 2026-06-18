@@ -6,7 +6,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     'version': '1.0.0',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Tìm kiếm địa điểm trên Google Map',
     'power': 'Thành viên'
 }

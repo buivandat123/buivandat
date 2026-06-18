@@ -7,7 +7,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     'version': '1.0.0',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Spam full chức năng Zalo - text, sticker, reaction, poll (cực nhanh)',
     'power': 'Admin'
 }

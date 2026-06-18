@@ -8,7 +8,7 @@ from asset.admin_check import is_owner
 
 des = {
     'version': "1.0.0",
-    'credits': "Light",
+    'credits': "kryzis X TXA",
     'description': "Đổi avatar bot bằng cách reply ảnh",
     'power': "Owner"
 }

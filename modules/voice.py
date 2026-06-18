@@ -8,7 +8,7 @@ from gtts import gTTS
 
 des = {
     'version': "2.0.0",
-    'credits': "Hoàng Vĩnh Phúc & Yuta Bot",
+    'credits': "kryzis X TXA",
     'description': "Chuyển đổi văn bản thành tin nhắn thoại",
     'power': "Thành viên"
 }

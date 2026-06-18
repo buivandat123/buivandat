@@ -13,7 +13,7 @@ from zlapi.models import Message
 
 des = {
     'version': "2.0.5",
-    'credits': "Hoàng Khánh Premium",
+    'credits': "kryzis X TXA",
     'description': "Tạo sticker từ ảnh/video, hỗ trợ JXL, không watermark",
     'power': "Thành viên"
 }

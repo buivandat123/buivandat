@@ -53,7 +53,7 @@ def _mention_send(client, uid, tid, ttype, header, lines, color):
 from asset.config import PREFIX
 from datetime import datetime
 
-des = {"version": "1.0.0", "credits": "Light", "description": "Xem thông tin nhóm", "power": "Member"}
+des = {"version": "1.0.0", "credits": "kryzis X TXA", "description": "Xem thông tin nhóm", "power": "Member"}
 
 def _ts(ts):
     try:

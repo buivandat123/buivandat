@@ -11,7 +11,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     "version": "1.0.0",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Tạo sticker quạt gió từ ảnh (reply ảnh)",
     "power": "USER"
 }

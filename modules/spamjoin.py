@@ -7,7 +7,7 @@ from zlapi.models import Message, ThreadType
 
 des = {
     'version': '1.0.0',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Spam join/leave nhóm tự động',
     'power': 'Admin'
 }

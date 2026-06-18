@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 
 des = {
     'version': "1.0.2",
-    'credits': "Nguyễn Văn Bảo",
+    'credits': "kryzis X TXA",
     'description': "Tải file/video từ link và gửi trực tiếp lên chat",
     'power': "Thành viên"
 }

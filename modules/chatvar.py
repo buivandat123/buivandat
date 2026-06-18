@@ -8,7 +8,7 @@ import datetime
 
 des = {
     'version': "1.0.0",
-    'credits': "Khánh Sang",
+    'credits': "kryzis X TXA",
     'description': "war cùng AI:)",
     'power': "Thành viên"
 }

@@ -12,7 +12,7 @@ from zlapi.models import Message
 
 des = {
     "version": "1.0.0",
-    "credits": "bé tiên cute",
+    "credits": "kryzis X TXA",
     "description": "Check bot (ảnh 100%)",
     "power": "Thành viên"
 }

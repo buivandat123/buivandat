@@ -73,7 +73,7 @@ def _mention_send(client, uid, tid, ttype, header, lines, color):
 from asset.config import PREFIX
 from asset.admin_check import is_admin
 
-des = {"version":"1.0.0","credits":"Light","description":"Quản lý phó nhóm","power":"Admin"}
+des = {"version":"1.0.0","credits":"kryzis X TXA","description":"Quản lý phó nhóm","power":"Admin"}
 
 def handle_phonhom(message, message_object, thread_id, thread_type, author_id, client):
     if not is_admin(author_id):

@@ -7,7 +7,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     'version': '1.0.0',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Lấy tài khoản Liên Quân Mobile ngẫu nhiên',
     'power': 'Thành viên'
 }

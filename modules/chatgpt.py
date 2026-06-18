@@ -7,7 +7,7 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle
 
 des = {
     'version': '1.0.0',
-    'credits': 'Yuta Bot',
+    'credits': 'kryzis X TXA',
     'description': 'Trò chuyện với AI (GPT)',
     'power': 'Thành viên'
 }

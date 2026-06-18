@@ -15,7 +15,7 @@ from pyzbar.pyzbar import decode
 
 des = {
     "version": "1.0.4",
-    "credits": "Kryzis",
+    "credits": "kryzis X TXA",
     "description": "Tạo bill MB giả (reply QR tự động nhận diện)",
     "power": "USER"
 }
