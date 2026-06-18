@@ -1,0 +1,37 @@
+from dto.index import *
+from pymongo import MongoClient
+
+def InitMongoBuild():
+    cfg = databaseReader()
+
+    HOST = str(cfg.get("host"))
+    PORT = int(cfg.get("port"))
+    USER = str(cfg.get("user"))
+    PASS = str(cfg.get("password"))
+    DB = str(cfg.get("database"))
+    AUTH_SOURCE = str(cfg.get("authSource", "admin"))
+
+    try:
+        if USER and PASS:
+            uri = f"mongodb://{USER}:{PASS}@{HOST}:{PORT}/?authSource={AUTH_SOURCE}"
+        else:
+            uri = f"mongodb://{HOST}:{PORT}/"
+        
+        client = MongoClient(
+            uri,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+        )
+        
+        client.server_info()
+        db = client[DB]
+        
+        client.close()
+        logger.base(f"URI MongoDB: {uri}")
+        logger.base("Connected to MongoDB Database OK")
+        return True
+
+    except Exception as e:
+        error_msg = f"MongoDB isn't configured properly.\nError: {str(e)}\n\nPlease ensure MongoDB is running on {HOST}:{PORT}"
+        logger.error(error_msg)
+        return False

@@ -1,0 +1,25 @@
+{
+  "config": {
+    "phone_number": "84337885300",
+    "secret_key": "3quQXzBSgx5+jNgu/oCvVQ==",
+    "send2me_id": "485954704153272353",
+    "zpw_ws": [
+      "wss://ws3-msg.chat.zalo.me",
+      "wss://ws8-msg.chat.zalo.me",
+      "wss://ws2-msg.chat.zalo.me",
+      "wss://ws4-msg.chat.zalo.me",
+      "wss://ws1-msg.chat.zalo.me",
+      "wss://ws5-msg.chat.zalo.me"
+    ],
+    "cloud_id": "4545774070858347146"
+  },
+  "cookies": {
+    "nl_bc25f23638b0498c4e36dd20731c2c28": "tzaoLC8i6ltBrpLLm24SyyxPCq7JU7osdzuH2ZenVG",
+    "zpdid": "4XFva5V-fZOG4vwPKlNCDXGNd9fJyCuo",
+    "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj1qDH5cTAuMCVM0XUQLAg8WjI15vcKweX1bS4LMj5VG",
+    "zpsid": "ChiT.358673719.46.qCZZSQ-UyjIOSvB1evxorDhjWEUQfiJZdAd3xGyX1hUTRz1rhiHK-iQUyjG",
+    "_zlang": "vn",
+    "zlogtype": "NwQOL9YZqQhp_wfDCuWjRcBHkrI7XBdVeydISmsO5bzdqRnd_xhdgU7o",
+    "zpw_sek": "aG86.358673719.a0.pu1sj9Qco_2XIwlbjwRByEs4hfkqdEd3vzEQgEpac9Vka-2QsC6-t_dblQR7c_RIwmPq1FMKEj8tfv5MkC_By0"
+  }
+}

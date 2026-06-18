@@ -1,0 +1,153 @@
+# -*- coding: utf-8 -*-
+import json
+from zlapi.models import Message, MultiMsgStyle, MessageStyle, ThreadType
+
+def _sty(text, color):
+    h = len(text.split("\n")[0]) + 1
+    return MultiMsgStyle([
+        MessageStyle(offset=0, length=len(text), style="font", size="9", auto_format=False),
+        MessageStyle(offset=0, length=h, style="color", color=color, auto_format=False),
+        MessageStyle(offset=0, length=h, style="bold", auto_format=False),
+    ])
+
+def _sty_mention(text, tag_len, color):
+    header_start = tag_len + 1
+    header_end = text.find("\n", header_start)
+    if header_end == -1:
+        header_end = len(text)
+    header_len = header_end - header_start + 1
+    return MultiMsgStyle([
+        MessageStyle(offset=0, length=len(text), style="font", size="9", auto_format=False),
+        MessageStyle(offset=header_start, length=header_len, style="color", color=color, auto_format=False),
+        MessageStyle(offset=header_start, length=header_len, style="bold", auto_format=False),
+    ])
+
+def sty_ok(t): return _sty(t, "#15A85F")
+def sty_warn(t): return _sty(t, "#F7B503")
+def sty_err(t): return _sty(t, "#DB342E")
+def sty_info(t): return _sty(t, "#00BFFF")
+
+def _name(client, uid):
+    try:
+        p = client.fetchUserInfo(uid).changed_profiles.get(str(uid), {})
+        return p.get("displayName", str(uid))
+    except:
+        return str(uid)
+
+def _mention_msg(client, uid, header, lines, color):
+    name = _name(client, uid)
+    tag = f"@{name}"
+    body = "\n".join(f"    {l}" for l in lines)
+    text = f"{tag}\n{header}\n{body}"
+    info = json.dumps([{"pos": 0, "uid": str(uid), "len": len(tag)}])
+    style = _sty_mention(text, len(tag), color)
+    return Message(text=text, mention=info, style=style)
+
+def _reply(client, msg_obj, tid, ttype, text, color):
+    style = _sty(text, color)
+    client.replyMessage(Message(text=text, style=style), msg_obj, tid, ttype)
+
+def _mention_send(client, uid, tid, ttype, header, lines, color):
+    msg = _mention_msg(client, uid, header, lines, color)
+    client.sendMentionMessage(msg, tid)
+
+import os
+from asset.config import PREFIX
+
+des = {"version": "1.0.0", "credits": "Light", "description": "Quản lý admin bot", "power": "Owner"}
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETING_FILE = os.path.join(BASE_DIR, "asset", "seting.json")
+
+def _load():
+    try:
+        import json as _j
+        with open(SETING_FILE, "r", encoding="utf-8") as f:
+            return _j.load(f)
+    except:
+        return {"admin": "", "adm": []}
+
+def _save(s):
+    import json as _j
+    with open(SETING_FILE, "w", encoding="utf-8") as f:
+        _j.dump(s, f, ensure_ascii=False, indent=2)
+
+def get_owner():
+    return str(_load().get("admin", ""))
+
+def get_admins():
+    return set(str(x) for x in _load().get("adm", []))
+
+def save_admins(a):
+    s = _load()
+    s["adm"] = list(a)
+    _save(s)
+
+def is_owner(uid):
+    return str(uid) == get_owner()
+
+def handle_admin(message, message_object, thread_id, thread_type, author_id, client):
+    if not is_owner(author_id):
+        _mention_send(client, author_id, message_object, thread_id, thread_type, "ERROR\n    Bạn không có quyền!", "#DB342E")
+        return
+
+    parts = message.split()
+    if len(parts) < 2:
+        _mention_send(client, author_id, message_object, thread_id, thread_type, f"WARNING\n    {PREFIX}admin list\n    {PREFIX}admin add @user\n    {PREFIX}admin remove @user", "#F7B503")
+        return
+
+    cmd = parts[1].lower()
+    admins = get_admins()
+    owner = get_owner()
+
+    if cmd == "list":
+        owner_name = _name(client, owner)
+        if not admins:
+            lines = [f"Chủ: {owner_name}", "Admin phụ: Không có"]
+        else:
+            adm_lines = [f"  {i}. {_name(client, u)}" for i, u in enumerate(sorted(admins), 1)]
+            lines = [f"Chủ: {owner_name}", "Admin phụ:"] + adm_lines
+        _mention_send(client, author_id, thread_id, thread_type, "ADMIN LIST", lines, "#15A85F")
+
+    elif cmd == "add":
+        uid = None
+        if message_object.mentions:
+            uid = message_object.mentions[0]["uid"]
+        elif len(parts) > 2 and parts[2].isdigit():
+            uid = parts[2]
+        if not uid:
+            _mention_send(client, author_id, message_object, thread_id, thread_type, f"WARNING\n    {PREFIX}admin add @user", "#F7B503")
+            return
+        if uid in admins:
+            _mention_send(client, message_object, thread_id, thread_type, "ERROR\n    Người dùng đã là admin!", "#DB342E")
+            return
+        if uid == owner:
+            _mention_send(client, author_id, message_object, thread_id, thread_type, "ERROR\n    Không thể thêm chủ sở hữu!", "#DB342E")
+            return
+        admins.add(uid)
+        save_admins(admins)
+        name = _name(client, uid)
+        _mention_send(client, uid, author_id, thread_id, thread_type, "SUCCESS", [f"Đã thêm {name} làm admin!"], "#15A85F")
+
+    elif cmd in ("remove", "rm"):
+        uid = None
+        if message_object.mentions:
+            uid = message_object.mentions[0]["uid"]
+        elif len(parts) > 2 and parts[2].isdigit():
+            uid = parts[2]
+        if not uid:
+            _mention_send(client, author_idmessage_object, thread_id, thread_type, f"WARNING\n    {PREFIX}admin remove @user", "#F7B503")
+            return
+        if uid not in admins:
+            _mention_send(client, author_id, message_object, thread_id, thread_type, "ERROR\n    Người dùng không phải admin!", "#DB342E")
+            return
+        admins.remove(uid)
+        save_admins(admins)
+        name = _name(client, uid)
+        _mention_send(client, uid, thread_id, thread_type, "SUCCESS", [f"Đã xóa {name} khỏi admin!"], "#15A85F")
+
+    else:
+        _mention_send(client, author_id, message_object, thread_id, thread_type, f"WARNING\n    {PREFIX}admin list / add / remove", "#F7B503")
+
+def LIGHT():
+    return {"admin": handle_admin}

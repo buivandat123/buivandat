@@ -1,0 +1,2 @@
+AppServerUrl = None
+TunnelProc = None

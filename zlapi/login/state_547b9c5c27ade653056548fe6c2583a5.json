@@ -1,0 +1,29 @@
+{
+  "config": {
+    "phone_number": "84366654351",
+    "secret_key": "gnMg89/Iq0/yT/Q96gmJQQ==",
+    "send2me_id": "862528585773972012",
+    "zpw_ws": [
+      "wss://ws2-msg.chat.zalo.me",
+      "wss://ws1-msg.chat.zalo.me",
+      "wss://ws3-msg.chat.zalo.me",
+      "wss://ws4-msg.chat.zalo.me",
+      "wss://ws8-msg.chat.zalo.me",
+      "wss://ws5-msg.chat.zalo.me"
+    ],
+    "cloud_id": "7153032727339019920"
+  },
+  "cookies": {
+    "_ga_RYD7END4JE": "GS2.2.s1752158184$o1$g1$t1752159815$j60$l0$h0",
+    "_ga_907M127EPP": "GS2.1.s1759625517$o2$g1$t1759625784$j6$l0$h0",
+    "_ga_1J0YGQPT22": "GS2.1.s1767574310$o3$g0$t1767574310$j60$l0$h0",
+    "_ga": "GA1.2.708841385.1733361463",
+    "_ga_3EM8ZPYYN3": "GS2.2.s1768563275$o9$g1$t1768563350$j60$l0$h0",
+    "zpsid": "4nr7.407491430.4.tbswPVlhfg6TEE-vz-kceOwOr9NBt9AOoj-LaL0H1Dv2V2nP-bc4ovBhfg4",
+    "zpw_sek": "YGaA.407491430.a0.B__CyIKCU5f3tp5210nuMbuk7J47DbezIq4VOXmZCIiL8m4E2br1R49XCWjqCKLuMAU2-5grxz3T3SnuJsLuMW",
+    "__zi": "3000.SSZzejyD5TikdhwWrHPSq2JVkgFT6XETEP6qkvv60PTttR2xr0uCbdJQkVRH2WhISTws-TKB0zGo.1",
+    "__zi-legacy": "3000.SSZzejyD5TikdhwWrHPSq2JVkgFT6XETEP6qkvv60PTttR2xr0uCbdJQkVRH2WhISTws-TKB0zGo.1",
+    "_zlang": "vn",
+    "app.event.zalo.me": "6535078045753591352"
+  }
+}

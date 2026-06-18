@@ -1,0 +1,1 @@
+# Mock bot module

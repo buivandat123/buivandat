@@ -1,0 +1,314 @@
+import requests
+import aiohttp
+import asyncio
+
+from ..util import utils
+from ..util.logger import exception
+
+
+class State:
+    __slots__ = (
+        "_config",
+        "_headers",
+        "_cookies",
+        "_session",
+        "userClientId",
+        "clientUUID",
+        "Loggin",
+        "_aio",
+        "_aioLock",
+        "phoneNumber",
+        "password",
+        "zpwWs",
+    )
+
+    def __init__(this):
+        this._config = {}
+        this._headers = dict(getattr(utils, "HEADERS", None) or {})
+        this._cookies = getattr(utils, "COOKIES", None)
+        this._session = requests.Session()
+        this.userClientId = None
+        this.clientUUID = None
+        this.Loggin = False
+        this._aio = None
+        this._aioLock = asyncio.Lock()
+        this.phoneNumber = None
+        this.password = None
+        this.zpwWs = None
+
+    def getCookies(this):
+        return this._cookies
+
+    def setCookies(this, cookies):
+        this._cookies = cookies
+        try:
+            if this._session:
+                this._session.cookies.clear()
+                if isinstance(cookies, dict):
+                    this._session.cookies.update(cookies)
+        except:
+            pass
+        try:
+            if this._aio and not this._aio.closed and cookies:
+                this._aio.cookie_jar.update_cookies(cookies)
+        except:
+            pass
+
+    def _CfgGet(this, *keys, default=None):
+        c = this._config if isinstance(this._config, dict) else {}
+        for k in keys:
+            if not k:
+                continue
+            v = c.get(k)
+            if v is not None and v != "":
+                return v
+        return default
+
+    def getSecretkey(this):
+        return this._CfgGet("secretkey", "secret_key", "zpw_enk", "zpwEnk", "zpw_sek")
+
+    def setSecretkey(this, secretkey):
+        v = None if secretkey is None else str(secretkey)
+        this._config["secretkey"] = v
+        this._config["secret_key"] = v
+        this._config["zpw_enk"] = v
+        this._config["zpwEnk"] = v
+
+    def getPhoneNumber(this):
+        return this._CfgGet("phone_number", "phoneNumber", "phone", default=this.phoneNumber)
+
+    def setPhoneNumber(this, phone):
+        v = None if phone is None else str(phone)
+        this.phoneNumber = v
+        if v is not None:
+            this._config["phone_number"] = v
+            this._config["phoneNumber"] = v
+
+    def getPassword(this):
+        v = this._CfgGet("password", "pass", "pwd", default=None)
+        return v if v is not None else this.password
+
+    def setPassword(this, password, storeInConfig=True):
+        v = None if password is None else str(password)
+        this.password = v
+        if storeInConfig:
+            this._config["password"] = v
+
+    def isLoggedin(this):
+        return this.Loggin
+
+    def _EncodeSafeString(this, s):
+        s = "" if s is None else str(s)
+        return s.encode("latin-1", "ignore").decode("latin-1")
+
+    def _RaiseReq(this, e):
+        raise exception.ZaloLoginError(str(e))
+
+    def _NowMs(this):
+        try:
+            return int(utils.now())
+        except:
+            try:
+                return int(asyncio.get_running_loop().time() * 1000)
+            except:
+                return int(asyncio.get_event_loop().time() * 1000)
+
+    def _BuildLoginInfoUrl(this, imei):
+        ts = this._NowMs()
+        ver = getattr(utils, "ZpwVer", None) or getattr(utils, "CLIENT_VERSION", None) or 645
+        return f"https://wpa.chat.zalo.me/api/login/getLoginInfo?imei={imei}&type=30&client_version={ver}&computer_name=Web&ts={ts}"
+
+    def _ApplyUserAgent(this, userAgent):
+        if userAgent:
+            this._headers["User-Agent"] = this._EncodeSafeString(userAgent)
+
+    def GetSession(this, *args, **kwargs):
+        kwargs.setdefault("headers", this._headers)
+        kwargs.setdefault("cookies", this._cookies)
+        try:
+            r = this._session.get(*args, **kwargs)
+            r.raise_for_status()
+            return r
+        except requests.RequestException as e:
+            this._RaiseReq(e)
+
+    def PostSession(this, *args, **kwargs):
+        kwargs.setdefault("headers", this._headers)
+        kwargs.setdefault("cookies", this._cookies)
+        try:
+            r = this._session.post(*args, **kwargs)
+            r.raise_for_status()
+            return r
+        except requests.RequestException as e:
+            this._RaiseReq(e)
+
+    async def _EnsureAio(this):
+        if this._aio and not this._aio.closed:
+            return this._aio
+        async with this._aioLock:
+            if this._aio and not this._aio.closed:
+                return this._aio
+            jar = aiohttp.CookieJar(unsafe=True)
+            s = aiohttp.ClientSession(headers=this._headers, cookie_jar=jar)
+            if this._cookies:
+                try:
+                    s.cookie_jar.update_cookies(this._cookies)
+                except:
+                    pass
+            this._aio = s
+            return this._aio
+
+    async def GetSessionAsync(this, *args, **kwargs):
+        s = await this._EnsureAio()
+        kwargs.setdefault("headers", this._headers)
+        try:
+            async with s.get(*args, **kwargs) as r:
+                r.raise_for_status()
+                return await r.json(content_type=None)
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            raise exception.ZaloLoginError(str(e))
+
+    async def PostSessionAsync(this, *args, **kwargs):
+        s = await this._EnsureAio()
+        kwargs.setdefault("headers", this._headers)
+        try:
+            async with s.post(*args, **kwargs) as r:
+                r.raise_for_status()
+                return await r.json(content_type=None)
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            raise exception.ZaloLoginError(str(e))
+
+    def _MergeLoginData(this, data, imei):
+        oldPassword = this.getPassword()
+        oldPhone = this.getPhoneNumber()
+        oldKey = this.getSecretkey()
+        oldUid = this._CfgGet("send2me_id", "send2meId", "uid", default=this.userClientId)
+        oldWs = this._CfgGet("zpw_ws", "zpwWs", "zpw_ws_v2", "zpwWsV2", default=this.zpwWs)
+
+        d = (data or {}).get("data") or {}
+        err = (data or {}).get("error_code", None)
+        if err != 0 or not d:
+            msg = (data or {}).get("error_message", "Undefined error")
+            raise exception.ZaloLoginError(f"Error #{err} during login: {msg}")
+
+        zpwWs = d.get("zpw_ws") or d.get("zpwWs") or d.get("zpw_ws_v2") or d.get("zpwWsV2") or oldWs
+        uid = d.get("send2me_id") or d.get("send2meId") or d.get("uid") or oldUid
+        phone = d.get("phone_number") or d.get("phoneNumber") or d.get("phone") or oldPhone
+        key = d.get("zpw_enk") or d.get("zpwEnk") or d.get("secret_key") or d.get("secretkey") or d.get("secretKey") or oldKey
+
+        if not key:
+            raise exception.ZaloLoginError("Unable to retrieve `secret key`.")
+
+        this._config = dict(d) if isinstance(d, dict) else {}
+        this._config["phone_number"] = str(phone or "")
+        this._config["phoneNumber"] = this._config["phone_number"]
+        this._config["send2me_id"] = str(uid or "")
+        this._config["send2meId"] = this._config["send2me_id"]
+        this._config["zpw_ws"] = zpwWs
+        this._config["zpwWs"] = zpwWs
+        this._config["zpw_enk"] = key
+        this._config["zpwEnk"] = key
+        this._config["secretkey"] = key
+        this._config["secret_key"] = key
+
+        if oldPassword is not None:
+            this._config["password"] = oldPassword
+            this.password = oldPassword
+
+        this.phoneNumber = this._config.get("phone_number") or this.phoneNumber
+        this.zpwWs = zpwWs
+        this.userClientId = this._config.get("send2me_id") or this.userClientId
+        this.clientUUID = imei or this.clientUUID
+        this.Loggin = True
+
+    def _TryCookieLogin(this, imei):
+        if not this._cookies:
+            raise exception.LoginMethodNotSupport("Login Method Not Supported.")
+        url = this._BuildLoginInfoUrl(imei)
+        r = this.GetSession(url)
+        data = r.json() if getattr(r, "content", None) else {}
+        this._MergeLoginData(data, imei)
+
+    async def _TryCookieLoginAsync(this, imei):
+        if not this._cookies:
+            raise exception.LoginMethodNotSupport("Login Method Not Supported.")
+        url = this._BuildLoginInfoUrl(imei)
+        data = await this.GetSessionAsync(url)
+        this._MergeLoginData(data, imei)
+
+    def _HydrateFromConfig(this, imei):
+        this.Loggin = True
+        if not this.userClientId:
+            this.userClientId = this._CfgGet("send2me_id", "send2meId", "uid", default=None)
+        if not this.clientUUID:
+            this.clientUUID = imei
+        if not this.phoneNumber:
+            this.phoneNumber = this.getPhoneNumber()
+        if not this.zpwWs:
+            this.zpwWs = this._CfgGet("zpw_ws", "zpwWs", "zpw_ws_v2", "zpwWsV2", default=None)
+        if not this.password:
+            pw = this._CfgGet("password", "pass", "pwd", default=None)
+            if pw is not None:
+                this.password = pw
+
+    def Login(this, phone, password, imei, sessionCookies=None, userAgent=None):
+        if password is not None:
+            this.setPassword(password, storeInConfig=True)
+        if phone:
+            this.setPhoneNumber(phone)
+
+        this._ApplyUserAgent(userAgent)
+        if sessionCookies is not None:
+            this.setCookies(sessionCookies)
+
+        if this._cookies and this.getSecretkey():
+            this._HydrateFromConfig(imei)
+            return True
+
+        try:
+            this._TryCookieLogin(imei)
+            return True
+        except exception.ZaloLoginError:
+            raise
+        except exception.LoginMethodNotSupport:
+            raise
+        except Exception as e:
+            raise exception.ZaloLoginError(str(e))
+
+    async def LoginAsync(this, phone, password, imei, sessionCookies=None, userAgent=None):
+        if password is not None:
+            this.setPassword(password, storeInConfig=True)
+        if phone:
+            this.setPhoneNumber(phone)
+
+        this._ApplyUserAgent(userAgent)
+        if sessionCookies is not None:
+            this.setCookies(sessionCookies)
+
+        if this._cookies and this.getSecretkey():
+            this._HydrateFromConfig(imei)
+            return True
+
+        try:
+            await this._TryCookieLoginAsync(imei)
+            return True
+        except exception.ZaloLoginError:
+            raise
+        except exception.LoginMethodNotSupport:
+            raise
+        except Exception as e:
+            raise exception.ZaloLoginError(str(e))
+
+    def Close(this):
+        try:
+            if this._session:
+                this._session.close()
+        finally:
+            this._session = None
+
+    async def CloseAsync(this):
+        try:
+            if this._aio and not this._aio.closed:
+                await this._aio.close()
+        finally:
+            this._aio = None

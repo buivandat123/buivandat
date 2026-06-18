@@ -1,0 +1,121 @@
+{
+  "bots": [
+    {
+      "id": 1,
+      "name": "create",
+      "prefix": ".",
+      "imei": "a378c4b8-9aa1-4efa-87e5-7ebaca57f434-a0e09f4206cef88dab92b93072e25747",
+      "cookies": "{\"_ga_RYD7END4JE\":\"GS2.2.s1777231428$o1$g1$t1777231428$j60$l0$h0\",\"_ga_YS1V643LGV\":\"GS2.1.s1777231427$o1$g0$t1777231428$j59$l0$h0\",\"_ga\":\"GA1.2.74565902.1777231427\",\"__zi\":\"3000.SSZzejyD6zOgdh2mtnLQWYQN_RAG01ICFjIXe9fEM8WxdEIcd4zKYdIPvg7PJbk5VvlghJ4p.1\",\"__zi-legacy\":\"3000.SSZzejyD6zOgdh2mtnLQWYQN_RAG01ICFjIXe9fEM8WxdEIcd4zKYdIPvg7PJbk5VvlghJ4p.1\",\"_zlang\":\"vn\",\"app.event.zalo.me\":\"5066933575052278488\",\"_gid\":\"GA1.2.159074149.1779505290\",\"_ga_3EM8ZPYYN3\":\"GS2.2.s1779505292$o4$g0$t1779505292$j60$l0$h0\",\"zpsid\":\"PxDD.455923450.10.koLiCN5zB3UBgm0iVNqiDmGENWD4I1K5GaaP1rjyU756Jb91SASq9XjzB3S\",\"zpw_sek\":\"BtDV.455923450.a0.MNNCC_Y0fTO2LedDsO2breEYmBtQkeVXYFNs-RhBohY0j-21oVBgcwBAw86vlPZqXQgaWhwtbgYEWN_EwUgbrW\"}",
+      "admin": "696983558841863982",
+      "status": "online",
+      "created_by": "696983558841863982",
+      "created_at": "27/05/2026 12:33",
+      "expire": null
+    },
+    {
+      "id": 2,
+      "name": "jz",
+      "prefix": ".",
+      "imei": "a378c4b8-9aa1-4efa-87e5-7ebaca57f434-a0e09f4206cef88dab92b93072e25747",
+      "cookies": {
+        "_ga_RYD7END4JE": "GS2.2.s1777231428$o1$g1$t1777231428$j60$l0$h0",
+        "_ga_YS1V643LGV": "GS2.1.s1777231427$o1$g0$t1777231428$j59$l0$h0",
+        "_ga": "GA1.2.74565902.1777231427",
+        "__zi": "3000.SSZzejyD6zOgdh2mtnLQWYQN_RAG01ICFjIXe9fEM8WxdEIcd4zKYdIPvg7PJbk5VvlghJ4p.1",
+        "__zi-legacy": "3000.SSZzejyD6zOgdh2mtnLQWYQN_RAG01ICFjIXe9fEM8WxdEIcd4zKYdIPvg7PJbk5VvlghJ4p.1",
+        "_zlang": "vn",
+        "app.event.zalo.me": "5066933575052278488",
+        "_gid": "GA1.2.159074149.1779505290",
+        "_ga_3EM8ZPYYN3": "GS2.2.s1779505292$o4$g0$t1779505292$j60$l0$h0",
+        "zpsid": "PxDD.455923450.10.koLiCN5zB3UBgm0iVNqiDmGENWD4I1K5GaaP1rjyU756Jb91SASq9XjzB3S",
+        "zpw_sek": "BtDV.455923450.a0.MNNCC_Y0fTO2LedDsO2breEYmBtQkeVXYFNs-RhBohY0j-21oVBgcwBAw86vlPZqXQgaWhwtbgYEWN_EwUgbrW"
+      },
+      "admin": "696983558841863982",
+      "status": "online",
+      "created_by": "696983558841863982",
+      "created_at": "27/05/2026 12:44",
+      "expire": null
+    },
+    {
+      "id": 3,
+      "name": "nguyen",
+      "prefix": ".",
+      "imei": "843004cc-8076-4884-8846-d14c423417cd-a16ddaab909d2cf27fce353f26dd2ff2",
+      "cookies": {
+        "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qpfRmoGJyCtIE4BGStUrdDKQ2JenVG",
+        "zpdid": "41R_a5NtgJiG4v6KKlx6CnyIcPrVziSm",
+        "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KTU66HFxc0SNGTTQbUb8Gf95rvhLwOa34aKM6bRVG",
+        "_zlang": "vn",
+        "zpsid": "eMKnVcAlVqAZUYmFTBP13lWuIbrjja06-JzGL6chAKs_OdCS9R8R3DHoUXXFiWOYdrTeCscuPHo8J6mqShnd3vm_5LvEnbfLf0qJKaZ55KIIJsmJPvy40rC",
+        "__zi": "3000.QOBlzDCV2uGerkFzm0LJqMFMulN10XlOOjsk_Su34zHZrw3w.1",
+        "zpw_sek": "Bvp1.450744863.a0.GpZmEXEcJl0CT9FgCgPEy6Y4Avind6osU-8BbJZJ5eLHaHkdECWdmthjBRnqctFIRgYlNS3mYVg1f-fFDCnEy0"
+      },
+      "admin": "696983558841863982",
+      "status": "online",
+      "created_by": "696983558841863982",
+      "created_at": "09/06/2026 15:46",
+      "expire": null
+    },
+    {
+      "id": 4,
+      "name": "hoannguyen",
+      "prefix": ".",
+      "imei": "843004cc-8076-4884-8846-d14c423417cd-a16ddaab909d2cf27fce353f26dd2ff2",
+      "cookies": {
+        "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qpfRmoGJyCtIE4BGStUrdDKQ2JenVG",
+        "zpdid": "41R_a5NtgJiG4v6KKlx6CnyIcPrVziSm",
+        "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KTU66HFxc0SNGTTQbUb8Gf95rvhLwOa34aKM6bRVG",
+        "_zlang": "vn",
+        "zpsid": "eMKnVcAlVqAZUYmFTBP13lWuIbrjja06-JzGL6chAKs_OdCS9R8R3DHoUXXFiWOYdrTeCscuPHo8J6mqShnd3vm_5LvEnbfLf0qJKaZ55KIIJsmJPvy40rC",
+        "__zi": "3000.QOBlzDCV2uGerkFzm0LJqMFMulN10XlOOjsk_Su34zHZrw3w.1",
+        "zpw_sek": "Bvp1.450744863.a0.GpZmEXEcJl0CT9FgCgPEy6Y4Avind6osU-8BbJZJ5eLHaHkdECWdmthjBRnqctFIRgYlNS3mYVg1f-fFDCnEy0"
+      },
+      "admin": "696983558841863982",
+      "status": "online",
+      "created_by": "696983558841863982",
+      "created_at": "09/06/2026 15:55",
+      "expire": null
+    },
+    {
+      "id": 5,
+      "name": "hoannguyenzzz",
+      "prefix": ".",
+      "imei": "843004cc-8076-4884-8846-d14c423417cd-a16ddaab909d2cf27fce353f26dd2ff2",
+      "cookies": {
+        "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qpfRmoGJyCtIE4BGStUrdDKQ2JenVG",
+        "zpdid": "41R_a5NtgJiG4v6KKlx6CnyIcPrVziSm",
+        "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KTU66HFxc0SNGTTQbUb8Gf95rvhLwOa34aKM6bRVG",
+        "_zlang": "vn",
+        "zpsid": "eMKnVcAlVqAZUYmFTBP13lWuIbrjja06-JzGL6chAKs_OdCS9R8R3DHoUXXFiWOYdrTeCscuPHo8J6mqShnd3vm_5LvEnbfLf0qJKaZ55KIIJsmJPvy40rC",
+        "__zi": "3000.QOBlzDCV2uGerkFzm0LJqMFMulN10XlOOjsk_Su34zHZrw3w.1",
+        "zpw_sek": "Bvp1.450744863.a0.GpZmEXEcJl0CT9FgCgPEy6Y4Avind6osU-8BbJZJ5eLHaHkdECWdmthjBRnqctFIRgYlNS3mYVg1f-fFDCnEy0"
+      },
+      "admin": "696983558841863982",
+      "status": "online",
+      "created_by": "696983558841863982",
+      "created_at": "09/06/2026 16:09",
+      "expire": null
+    },
+    {
+      "id": 6,
+      "name": "hoannguyenzzzz",
+      "prefix": ".",
+      "imei": "843004cc-8076-4884-8846-d14c423417cd-a16ddaab909d2cf27fce353f26dd2ff2",
+      "cookies": {
+        "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qpfRmoGJyCtIE4BGStUrdDKQ2JenVG",
+        "zpdid": "41R_a5NtgJiG4v6KKlx6CnyIcPrVziSm",
+        "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KTU66HFxc0SNGTTQbUb8Gf95rvhLwOa34aKM6bRVG",
+        "_zlang": "vn",
+        "zpsid": "eMKnVcAlVqAZUYmFTBP13lWuIbrjja06-JzGL6chAKs_OdCS9R8R3DHoUXXFiWOYdrTeCscuPHo8J6mqShnd3vm_5LvEnbfLf0qJKaZ55KIIJsmJPvy40rC",
+        "__zi": "3000.QOBlzDCV2uGerkFzm0LJqMFMulN10XlOOjsk_Su34zHZrw3w.1",
+        "zpw_sek": "Bvp1.450744863.a0.GpZmEXEcJl0CT9FgCgPEy6Y4Avind6osU-8BbJZJ5eLHaHkdECWdmthjBRnqctFIRgYlNS3mYVg1f-fFDCnEy0"
+      },
+      "admin": "696983558841863982",
+      "status": "offline",
+      "created_by": "696983558841863982",
+      "created_at": "09/06/2026 16:24",
+      "expire": null
+    }
+  ],
+  "next_id": 7
+}

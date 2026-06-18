@@ -1,0 +1,77 @@
+import json, os, time, sys, threading, random, requests, difflib, filetype, subprocess, string, emoji, marshal, zipfile
+import base64, zlib, io
+from requests.adapters import HTTPAdapter
+# from ytmusicapi import YTMusic  # Tạm comment nếu lỗi
+from urllib3.util.retry import Retry
+from pathlib import Path
+from threading import Lock
+from typing import Dict, List, Optional, Any
+import builtins
+from functions.api.moderator import *
+from functions.api import ZaloAPI, logger
+from datetime import datetime, timedelta, timezone
+import unicodedata
+import ast
+import uuid
+import shutil
+from collections import deque
+import traceback
+# from nudenet import NudeDetector  # Cần tensorflow, khó cài trên 32-bit
+import importlib.util
+import re
+from bs4 import BeautifulSoup
+from PIL import Image, ImageDraw, ImageSequence, ImageFont
+from io import BytesIO
+import httpx
+import platform
+import tempfile
+# from rembg import remove  # Cần onnxruntime, khó cài trên 32-bit
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
+import functools
+import yt_dlp
+from flask import Flask, jsonify, request, send_from_directory, session
+from werkzeug.exceptions import Unauthorized
+import mimetypes
+from requests_oauthlib import OAuth1
+import socket
+import asyncio
+import hashlib, hmac
+from urllib.parse import quote, urlparse
+import pytz
+
+import urllib.request as urequest
+import urllib.error as uerror
+
+# from pyzbar.pyzbar import decode  # Cần libzbar, cài qua pkg
+from threading import Thread
+import secrets
+# Sửa import pygments cho tương thích
+try:
+    from pygments.lexers import guess_lexer
+except ImportError:
+    guess_lexer = None
+import shlex
+from pymongo import MongoClient
+import ipaddress
+    
+timeNow = time.strftime("%H:%M:%S - %d/%m/%Y", time.localtime())
+tsn=int(time.time()*1000)
+storagePath = "assets/storage"
+cfgPath = os.path.join("assets", "config", "database-config.json")
+tempPath = os.path.join("assets", "config", "temp-storage.json")
+mainLogin = "assets/config/login.json"
+clientlist: Dict[str, object] = {}
+lock = threading.Lock()
+shutdown_event = threading.Event()
+
+# Thêm try-except cho file config
+try:
+    with open(cfgPath, "r", encoding="utf-8") as f:
+        cfgData = json.load(f) or {}
+except FileNotFoundError:
+    print(f"Config file not found: {cfgPath}")
+    cfgData = {}
+except json.JSONDecodeError:
+    print(f"Invalid JSON in config file: {cfgPath}")
+    cfgData = {}
