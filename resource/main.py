@@ -16,7 +16,6 @@ from modules.lqskin import handle_skin_choice, user_states
 from modules.sleep import update_activity, is_sleeping, wake_up
 from modules.mute import is_muted
 from modules.kw import on_message as kw_on_message
-from modules.welcome import send_welcome
 
 logger = Logging()
 executor = ThreadPoolExecutor(max_workers=12)
@@ -966,7 +965,7 @@ class MainBot(ZaloAPI):
                         send_welcome(self, tid, uid)
         except:
             pass
-                                pass
+        pass
             if hasattr(event_data, "updateType") and event_data.updateType in (6, 7):
                 tid = str(getattr(event_data, "groupId", ""))
                 if tid in self._welcome:

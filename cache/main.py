@@ -314,10 +314,12 @@ class SubBotManager:
             if os.path.exists(pid_f):
                 try:
                     with open(pid_f) as f:
-                        os.kill(int(f.read()), signal.SIGTERM)
+                        pid = int(f.read())
+                    os.kill(pid, signal.SIGTERM)
                 except:
                     pass
-                os.remove(pid_f)
+                try: os.remove(pid_f)
+                except: pass
             proc = subprocess.Popen([sys.executable, script], cwd=folder,
                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                     start_new_session=True)
@@ -333,15 +335,19 @@ class SubBotManager:
         try:
             info = cls._instances.pop(str(bot_id), None)
             if info and info.get("proc"):
-                info["proc"].terminate()
-            pid_f = os.path.join(info["cfg"]["folder"], "bot.pid") if info else ""
+                try: info["proc"].terminate()
+                except: pass
+            folder = info.get("cfg", {}).get("folder") if info else os.path.join("modules/bots", str(bot_id))
+            pid_f = os.path.join(folder, "bot.pid")
             if os.path.exists(pid_f):
                 try:
                     with open(pid_f) as f:
-                        os.kill(int(f.read()), signal.SIGTERM)
+                        pid = int(f.read())
+                    os.kill(pid, signal.SIGTERM)
                 except:
                     pass
-                os.remove(pid_f)
+                try: os.remove(pid_f)
+                except: pass
             return True
         except:
             return False
@@ -350,7 +356,18 @@ class SubBotManager:
     def is_running(cls, bot_id):
         info = cls._instances.get(str(bot_id))
         if info and info.get("proc"):
-            return info["proc"].poll() is None
+            if info["proc"].poll() is None:
+                return True
+        folder = os.path.join("modules/bots", str(bot_id))
+        pid_f = os.path.join(folder, "bot.pid")
+        if os.path.exists(pid_f):
+            try:
+                with open(pid_f) as f:
+                    pid = int(f.read())
+                os.kill(pid, 0)
+                return True
+            except:
+                pass
         return False
 
 # ─── DEFAULT NS ───────────────────────────────────────
@@ -422,7 +439,7 @@ class MainBot(ZaloAPI):
         _sj(NS_FILE, self._ns)
 
     def is_notify_on(self, tid):
-        return self._notify.get(str(tid), True)
+        return self._notify.get(str(tid), False)
 
     def set_notify(self, tid, s):
         self._notify[str(tid)] = s
@@ -520,7 +537,11 @@ class MainBot(ZaloAPI):
         p = self.settings.get("prefix", PREFIX)
         arg = msg.strip()[len(p):].strip().lower()
 
-        if arg == "bot on":
+        if arg == "bot":
+            self._bot_enabled = not self._bot_enabled
+            status_str = "🟢 BẬT" if self._bot_enabled else "🔴 TẮT"
+            _reply(self, obj, tid, ttype, f"SUCCESS\n    {status_str} Bot đã được thay đổi trạng thái toàn cục!", sty_ok)
+        elif arg == "bot on":
             self._bot_enabled = True
             _reply(self, obj, tid, ttype, "SUCCESS\n    🟢 Bot đã bật toàn cục!", sty_ok)
         elif arg == "bot off":
@@ -987,6 +1008,35 @@ class MainBot(ZaloAPI):
     # ══════════════════════════════════════════════════
     def onMessage(self, mid, author_id, message, message_object, thread_id, thread_type):
         update_activity()
+        if str(author_id) == str(self.uid):
+            return
+        
+        try:
+            author_id_str = str(author_id)
+            if not hasattr(self, "_user_name_cache"):
+                self._user_name_cache = {}
+            if author_id_str not in self._user_name_cache:
+                try:
+                    user_info = self.fetchUserInfo(author_id_str)
+                    name = user_info.changed_profiles.get(author_id_str, {}).get("displayName", author_id_str)
+                    self._user_name_cache[author_id_str] = name
+                except:
+                    name = author_id_str
+            else:
+                name = self._user_name_cache[author_id_str]
+
+            msg_str = str(message) if message else ""
+            if not msg_str and message_object and message_object.content:
+                msg_str = str(message_object.content)
+            
+            prefix = self.settings.get("prefix", PREFIX)
+            is_admin = check_is_admin(author_id)
+            is_bot_cmd = msg_str.strip().startswith(prefix + "bot")
+
+            if thread_type == ThreadType.GROUP and is_admin and is_bot_cmd:
+                logger.info(f"📨 Tin nhắn từ {name} ({author_id}) | Box {thread_id} ({thread_type.name}): {msg_str}")
+        except:
+            pass
 
         if is_sleeping():
             try:
@@ -1087,10 +1137,23 @@ if __name__ == "__main__":
             logger.warning("Xoá session.json cũ.")
         except:
             pass
+
+    def graceful_exit(sig, frame):
+        print("\n\x1b[1;36m" + "="*55 + "\x1b[0m")
+        print("\x1b[1;32m       ⚡ VANDAT BOT SHUTTING DOWN GRACEFULLY ⚡\x1b[0m")
+        print("\x1b[1;35m           👋 Tạm biệt và hẹn gặp lại! 👋\x1b[0m")
+        print("\x1b[1;36m" + "="*55 + "\x1b[0m\n")
+        os._exit(0)
+
+    signal.signal(signal.SIGINT, graceful_exit)
+    signal.signal(signal.SIGTERM, graceful_exit)
+
     try:
         client = MainBot(API_KEY, SECRET_KEY, IMEI, SESSION_COOKIES)
         send_reset_success_message(client)
         client.listen()
+    except KeyboardInterrupt:
+        graceful_exit(None, None)
     except Exception as e:
         logger.error(f"Lỗi: {e}")
         traceback.print_exc()
