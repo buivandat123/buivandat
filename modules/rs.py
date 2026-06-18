@@ -95,12 +95,15 @@ def handle_reset_command(message, message_object, thread_id, thread_type, author
 
 def send_reset_success_message(client):
     try:
-        with open("modules/cache/restart_info.txt") as f:
+        path = "modules/cache/restart_info.txt"
+        if not os.path.exists(path):
+            return
+        with open(path) as f:
             lines=f.readlines()
         tid=lines[0].strip(); ttype=ThreadType[lines[1].strip()]
         client.sendMessage(Message(text="SUCCESS\nbot ỉa xong rồi, sài được rồi á!",
                                    style=sty_ok("SUCCESS\nbot ỉa xong rồi, sài được rồi á!")),tid,ttype,ttl=30000)
-        os.remove("modules/cache/restart_info.txt")
+        os.remove(path)
     except Exception as e:
         print(f"Lỗi sau restart: {e}")
 
