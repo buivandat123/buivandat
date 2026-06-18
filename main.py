@@ -1006,10 +1006,23 @@ class MainBot(ZaloAPI):
         update_activity()
         
         try:
+            author_id_str = str(author_id)
+            if not hasattr(self, "_user_name_cache"):
+                self._user_name_cache = {}
+            if author_id_str not in self._user_name_cache:
+                try:
+                    user_info = self.fetchUserInfo(author_id_str)
+                    name = user_info.changed_profiles.get(author_id_str, {}).get("displayName", author_id_str)
+                    self._user_name_cache[author_id_str] = name
+                except:
+                    name = author_id_str
+            else:
+                name = self._user_name_cache[author_id_str]
+
             msg_str = str(message) if message else ""
             if not msg_str and message_object and message_object.content:
                 msg_str = str(message_object.content)
-            logger.info(f"📨 Tin nhắn từ {author_id} | Box {thread_id} ({thread_type.name}): {msg_str}")
+            logger.info(f"📨 Tin nhắn từ {name} ({author_id}) | Box {thread_id} ({thread_type.name}): {msg_str}")
         except:
             pass
 
