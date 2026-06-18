@@ -38,12 +38,20 @@ def Font(size, bold=False):
     paths = [
         "/system/fonts/Roboto-Regular.ttf",
         "/system/fonts/DroidSans.ttf",
-        "/system/fonts/NotoSans-Regular.ttf"
+        "/system/fonts/NotoSans-Regular.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        "C:\\Windows\\Fonts\\tahoma.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     ]
     bold_paths = [
         "/system/fonts/Roboto-Bold.ttf",
         "/system/fonts/DroidSans-Bold.ttf",
-        "/system/fonts/NotoSans-Bold.ttf"
+        "/system/fonts/NotoSans-Bold.ttf",
+        "C:\\Windows\\Fonts\\arialbd.ttf",
+        "C:\\Windows\\Fonts\\segoeuib.ttf",
+        "C:\\Windows\\Fonts\\tahomabd.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     ]
     for p in (bold_paths if bold else paths):
         try:

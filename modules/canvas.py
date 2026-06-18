@@ -26,8 +26,22 @@ def Font(size, bold=False):
     if key in _font_cache:
         return _font_cache[key]
     
-    paths = ["/system/fonts/Roboto-Regular.ttf", "/system/fonts/DroidSans.ttf"]
-    bold_paths = ["/system/fonts/Roboto-Bold.ttf", "/system/fonts/DroidSans-Bold.ttf"]
+    paths = [
+        "/system/fonts/Roboto-Regular.ttf",
+        "/system/fonts/DroidSans.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        "C:\\Windows\\Fonts\\tahoma.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    ]
+    bold_paths = [
+        "/system/fonts/Roboto-Bold.ttf",
+        "/system/fonts/DroidSans-Bold.ttf",
+        "C:\\Windows\\Fonts\\arialbd.ttf",
+        "C:\\Windows\\Fonts\\segoeuib.ttf",
+        "C:\\Windows\\Fonts\\tahomabd.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    ]
     for p in (bold_paths if bold else paths):
         try:
             font = ImageFont.truetype(p, int(size))

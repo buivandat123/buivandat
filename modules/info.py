@@ -30,12 +30,20 @@ def Font(size, bold=False):
     paths = [
         "/system/fonts/Roboto-Regular.ttf",
         "/system/fonts/DroidSans.ttf",
-        "/system/fonts/NotoSans-Regular.ttf"
+        "/system/fonts/NotoSans-Regular.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        "C:\\Windows\\Fonts\\tahoma.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     ]
     bold_paths = [
         "/system/fonts/Roboto-Bold.ttf",
         "/system/fonts/DroidSans-Bold.ttf",
-        "/system/fonts/NotoSans-Bold.ttf"
+        "/system/fonts/NotoSans-Bold.ttf",
+        "C:\\Windows\\Fonts\\arialbd.ttf",
+        "C:\\Windows\\Fonts\\segoeuib.ttf",
+        "C:\\Windows\\Fonts\\tahomabd.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     ]
     for p in (bold_paths if bold else paths):
         try:
@@ -322,7 +330,7 @@ def handle_info(message, message_object, thread_id, thread_type, author_id, clie
                               message_object, thread_id, thread_type, ttl=60000)
             return
 
-        cache_dir = "/sdcard/download/kryziz/cache"
+        cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache", "info_cache")
         os.makedirs(cache_dir, exist_ok=True)
         out_path = f"{cache_dir}/user_info_{uid}.png"
 

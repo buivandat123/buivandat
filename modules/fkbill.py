@@ -40,11 +40,17 @@ def get_font(size, bold=False):
         "/system/fonts/Roboto-Regular.ttf",
         "/system/fonts/Roboto-Bold.ttf",
         "/system/fonts/NotoSans-Regular.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf" if not bold else "C:\\Windows\\Fonts\\arialbd.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf" if not bold else "C:\\Windows\\Fonts\\segoeuib.ttf",
+        "C:\\Windows\\Fonts\\tahoma.ttf" if not bold else "C:\\Windows\\Fonts\\tahomabd.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" if not bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     ]
     for f in fonts:
         try:
             if os.path.exists(f):
                 return ImageFont.truetype(f, size)
+            # direct load for standard system/Windows fonts where path exists
+            return ImageFont.truetype(f, size)
         except:
             pass
     return ImageFont.load_default()
