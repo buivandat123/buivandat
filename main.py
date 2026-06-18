@@ -314,10 +314,12 @@ class SubBotManager:
             if os.path.exists(pid_f):
                 try:
                     with open(pid_f) as f:
-                        os.kill(int(f.read()), signal.SIGTERM)
+                        pid = int(f.read())
+                    os.kill(pid, signal.SIGTERM)
                 except:
                     pass
-                os.remove(pid_f)
+                try: os.remove(pid_f)
+                except: pass
             proc = subprocess.Popen([sys.executable, script], cwd=folder,
                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                     start_new_session=True)
@@ -333,15 +335,19 @@ class SubBotManager:
         try:
             info = cls._instances.pop(str(bot_id), None)
             if info and info.get("proc"):
-                info["proc"].terminate()
-            pid_f = os.path.join(info["cfg"]["folder"], "bot.pid") if info else ""
+                try: info["proc"].terminate()
+                except: pass
+            folder = info.get("cfg", {}).get("folder") if info else os.path.join("modules/bots", str(bot_id))
+            pid_f = os.path.join(folder, "bot.pid")
             if os.path.exists(pid_f):
                 try:
                     with open(pid_f) as f:
-                        os.kill(int(f.read()), signal.SIGTERM)
+                        pid = int(f.read())
+                    os.kill(pid, signal.SIGTERM)
                 except:
                     pass
-                os.remove(pid_f)
+                try: os.remove(pid_f)
+                except: pass
             return True
         except:
             return False
@@ -350,7 +356,18 @@ class SubBotManager:
     def is_running(cls, bot_id):
         info = cls._instances.get(str(bot_id))
         if info and info.get("proc"):
-            return info["proc"].poll() is None
+            if info["proc"].poll() is None:
+                return True
+        folder = os.path.join("modules/bots", str(bot_id))
+        pid_f = os.path.join(folder, "bot.pid")
+        if os.path.exists(pid_f):
+            try:
+                with open(pid_f) as f:
+                    pid = int(f.read())
+                os.kill(pid, 0)
+                return True
+            except:
+                pass
         return False
 
 # ─── DEFAULT NS ───────────────────────────────────────
