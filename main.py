@@ -439,7 +439,7 @@ class MainBot(ZaloAPI):
         _sj(NS_FILE, self._ns)
 
     def is_notify_on(self, tid):
-        return self._notify.get(str(tid), True)
+        return self._notify.get(str(tid), False)
 
     def set_notify(self, tid, s):
         self._notify[str(tid)] = s
