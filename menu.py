@@ -35,7 +35,14 @@ CacheDir = "/sdcard/download/kryzis/cache"
 os.makedirs(CacheDir, exist_ok=True)
 
 def Font(size, bold=False):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    local_fonts_dir = os.path.join(base_dir, "data", "fonts")
+    
     paths = [
+        os.path.join(local_fonts_dir, "Roboto-Regular.ttf"),
+        os.path.join(local_fonts_dir, "DroidSans.ttf"),
+        os.path.join(local_fonts_dir, "DejaVuSans.ttf"),
+        os.path.join(local_fonts_dir, "NotoSans-Regular.ttf"),
         "/system/fonts/Roboto-Regular.ttf",
         "/system/fonts/DroidSans.ttf",
         "/system/fonts/NotoSans-Regular.ttf",
@@ -45,6 +52,10 @@ def Font(size, bold=False):
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     ]
     bold_paths = [
+        os.path.join(local_fonts_dir, "Roboto-Bold.ttf"),
+        os.path.join(local_fonts_dir, "DroidSans-Bold.ttf"),
+        os.path.join(local_fonts_dir, "DejaVuSans-Bold.ttf"),
+        os.path.join(local_fonts_dir, "NotoSans-Bold.ttf"),
         "/system/fonts/Roboto-Bold.ttf",
         "/system/fonts/DroidSans-Bold.ttf",
         "/system/fonts/NotoSans-Bold.ttf",

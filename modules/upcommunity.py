@@ -5,9 +5,9 @@ from asset.admin_check import is_admin
 from datetime import datetime
 
 des = {
-    'version': "1.0.0",
+    'version': "1.0.1",
     'credits': "kryzis X TXA",
-    'description': "Nâng cấp nhóm lên Community",
+    'description': "Nâng cấp nhóm lên Community (hỗ trợ lệnh upcommunity / upcom)",
     'power': "Admin"
 }
 
@@ -25,7 +25,7 @@ def success_style():
         MessageStyle(offset=0, length=100000, style="font",  size="0",        auto_format=False)
     ])
 
-def handle_upcomunity(message, message_object, thread_id, thread_type, author_id, client):
+def handle_upcommunity(message, message_object, thread_id, thread_type, author_id, client):
 
     if thread_type != ThreadType.GROUP:
         client.replyMessage(
@@ -53,7 +53,7 @@ def handle_upcomunity(message, message_object, thread_id, thread_type, author_id
             created_date = "Không rõ"
 
         result = client.upgradeComunity(thread_id)
-        print(f"[upcomunity] result: {result}")
+        print(f"[upcommunity] result: {result}")
 
         current_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
@@ -78,7 +78,7 @@ def handle_upcomunity(message, message_object, thread_id, thread_type, author_id
             _map_error(inner_code, inner_msg, client, message_object, thread_id, thread_type)
 
     except Exception as e:
-        print(f"[upcomunity] exception: {e}")
+        print(f"[upcommunity] exception: {e}")
         err = str(e).lower()
         err_raw = str(e)
         if "community" in err or "already" in err or "đã" in err or "#185" in err_raw:
@@ -103,4 +103,7 @@ def _map_error(code, msg, client, message_object, thread_id, thread_type):
     client.replyMessage(Message(text=text, style=warning_style()), message_object, thread_id, thread_type)
 
 def LIGHT():
-    return {'upcomunity': handle_upcomunity}
+    return {
+        'upcommunity': handle_upcommunity,
+        'upcom': handle_upcommunity
+    }

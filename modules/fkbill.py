@@ -35,11 +35,22 @@ def _reply(client, msg_obj, tid, ttype, text):
     client.replyMessage(Message(text=text, style=_sty(text)), msg_obj, tid, ttype)
 
 def get_font(size, bold=False):
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    local_fonts_dir = os.path.join(base_dir, "data", "fonts")
+    
+    local_font = os.path.join(local_fonts_dir, "Roboto-Bold.ttf" if bold else "Roboto-Regular.ttf")
+    local_noto = os.path.join(local_fonts_dir, "NotoSans-Bold.ttf" if bold else "NotoSans-Regular.ttf")
+    local_dejavu = os.path.join(local_fonts_dir, "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf")
+    local_droid = os.path.join(local_fonts_dir, "DroidSans-Bold.ttf" if bold else "DroidSans.ttf")
+
     fonts = [
+        local_font,
+        local_noto,
+        local_dejavu,
+        local_droid,
         "/storage/emulated/0/Download/kryzis/font.ttf",
-        "/system/fonts/Roboto-Regular.ttf",
-        "/system/fonts/Roboto-Bold.ttf",
-        "/system/fonts/NotoSans-Regular.ttf",
+        "/system/fonts/Roboto-Regular.ttf" if not bold else "/system/fonts/Roboto-Bold.ttf",
+        "/system/fonts/NotoSans-Regular.ttf" if not bold else "/system/fonts/NotoSans-Bold.ttf",
         "C:\\Windows\\Fonts\\arial.ttf" if not bold else "C:\\Windows\\Fonts\\arialbd.ttf",
         "C:\\Windows\\Fonts\\segoeui.ttf" if not bold else "C:\\Windows\\Fonts\\segoeuib.ttf",
         "C:\\Windows\\Fonts\\tahoma.ttf" if not bold else "C:\\Windows\\Fonts\\tahomabd.ttf",

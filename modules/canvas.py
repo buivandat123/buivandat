@@ -1,5 +1,4 @@
-# modules/canvas.py
-# -*- coding: utf-8 -*-
+import os
 import random
 import requests
 from io import BytesIO
@@ -26,7 +25,14 @@ def Font(size, bold=False):
     if key in _font_cache:
         return _font_cache[key]
     
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    local_fonts_dir = os.path.join(base_dir, "data", "fonts")
+    
     paths = [
+        os.path.join(local_fonts_dir, "Roboto-Regular.ttf"),
+        os.path.join(local_fonts_dir, "DroidSans.ttf"),
+        os.path.join(local_fonts_dir, "DejaVuSans.ttf"),
+        os.path.join(local_fonts_dir, "NotoSans-Regular.ttf"),
         "/system/fonts/Roboto-Regular.ttf",
         "/system/fonts/DroidSans.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
@@ -35,6 +41,10 @@ def Font(size, bold=False):
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     ]
     bold_paths = [
+        os.path.join(local_fonts_dir, "Roboto-Bold.ttf"),
+        os.path.join(local_fonts_dir, "DroidSans-Bold.ttf"),
+        os.path.join(local_fonts_dir, "DejaVuSans-Bold.ttf"),
+        os.path.join(local_fonts_dir, "NotoSans-Bold.ttf"),
         "/system/fonts/Roboto-Bold.ttf",
         "/system/fonts/DroidSans-Bold.ttf",
         "C:\\Windows\\Fonts\\arialbd.ttf",
