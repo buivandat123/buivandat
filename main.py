@@ -1104,10 +1104,23 @@ if __name__ == "__main__":
             logger.warning("Xoá session.json cũ.")
         except:
             pass
+
+    def graceful_exit(sig, frame):
+        print("\n\x1b[1;36m" + "="*55 + "\x1b[0m")
+        print("\x1b[1;32m       ⚡ VANDAT BOT SHUTTING DOWN GRACEFULLY ⚡\x1b[0m")
+        print("\x1b[1;35m           👋 Tạm biệt và hẹn gặp lại! 👋\x1b[0m")
+        print("\x1b[1;36m" + "="*55 + "\x1b[0m\n")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, graceful_exit)
+    signal.signal(signal.SIGTERM, graceful_exit)
+
     try:
         client = MainBot(API_KEY, SECRET_KEY, IMEI, SESSION_COOKIES)
         send_reset_success_message(client)
         client.listen()
+    except KeyboardInterrupt:
+        graceful_exit(None, None)
     except Exception as e:
         logger.error(f"Lỗi: {e}")
         traceback.print_exc()

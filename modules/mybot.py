@@ -69,10 +69,14 @@ asset.config.PREFIX = cfg.get("PREFIX")
 asset.config.ADMIN = cfg.get("ADMIN")
 
 # Start client
-client = MainBot(asset.config.API_KEY, asset.config.SECRET_KEY, asset.config.IMEI, asset.config.SESSION_COOKIES)
-client.settings["prefix"] = asset.config.PREFIX
-client.ADMIN = str(asset.config.ADMIN)
-client.listen()
+try:
+    client = MainBot(asset.config.API_KEY, asset.config.SECRET_KEY, asset.config.IMEI, asset.config.SESSION_COOKIES)
+    client.settings["prefix"] = asset.config.PREFIX
+    client.ADMIN = str(asset.config.ADMIN)
+    client.listen()
+except KeyboardInterrupt:
+    print("\\n👋 Đang dừng bot con sạch sẽ (Ctrl+C)... Hẹn gặp lại!")
+    sys.exit(0)
 """
     with open(os.path.join(folder, "run.py"), "w", encoding="utf-8") as f:
         f.write(run_py_content)

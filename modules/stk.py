@@ -1,4 +1,4 @@
-﻿import requests
+import requests
 import subprocess
 import json
 import urllib.parse
@@ -69,9 +69,14 @@ def download_file_partial(url, max_bytes=8192):
     return None
 
 def fix_jxl_url(url):
-    """Chuyển đuôi .jxl thành .jpg"""
-    if '.jxl' in url.lower():
-        return url.replace('.jxl', '.jpg')
+    """Chuyển đuôi .jxl hoặc .jx thành .jpg, và /jxl/ thành /jpg/"""
+    url_lower = url.lower()
+    if '.jxl' in url_lower:
+        url = url.replace('.jxl', '.jpg')
+    elif '.jx' in url_lower:
+        url = url.replace('.jx', '.jpg')
+    if '/jxl/' in url_lower:
+        url = url.replace('/jxl/', '/jpg/')
     return url
 
 def get_file_type_from_url(url):

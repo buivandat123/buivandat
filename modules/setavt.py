@@ -59,8 +59,14 @@ def extract_image_url(obj):
         for k in ['hdUrl', 'normalUrl', 'oriUrl', 'thumbUrl', 'thumb', 'href', 'url']:
             v = obj.get(k)
             if v and isinstance(v, str) and v.startswith('http'):
-                # Chuyển jxl sang jpg
-                v = v.replace('.jxl', '.jpg').replace('/jxl/', '/jpg/')
+                # Chuyển jxl/jx sang jpg
+                v_lower = v.lower()
+                if '.jxl' in v_lower:
+                    v = v.replace('.jxl', '.jpg')
+                elif '.jx' in v_lower:
+                    v = v.replace('.jx', '.jpg')
+                if '/jxl/' in v_lower:
+                    v = v.replace('/jxl/', '/jpg/')
                 return v
         return None
     return None
