@@ -16,12 +16,12 @@ des = {
     "power": "User"
 }
 
-CacheDir = "/sdcard/download/kryzis/cache"
+CacheDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache", "menu_cache")
 os.makedirs(CacheDir, exist_ok=True)
 
 def get_all_commands():
     commands = []
-    current_dir = "/sdcard/download/kryzis/modules"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
     if not os.path.exists(current_dir):
         return commands
     for filename in os.listdir(current_dir):
