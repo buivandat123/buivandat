@@ -48,7 +48,7 @@ class ZaloAPI(object):
             ):
                 self.login(phone, password, imei, user_agent)
         
-    def loginWithQR(self, user_agent=None, qr_path="zalo_qr.png", on_qr_generated=None):
+    def loginWithQR(self, user_agent=None, qr_path="zalo_qr.png", on_qr_generated=None, on_scanned=None):
         """Khởi tạo quá trình đăng nhập bằng mã QR.
 
         Tham số:
@@ -57,6 +57,9 @@ class ZaloAPI(object):
             on_qr_generated (callable, tùy chọn): Một hàm callback sẽ được thực thi
                                                  ngay sau khi mã QR được lưu.
                                                  Hàm này nhận 'qr_path' làm tham số duy nhất.
+            on_scanned (callable, tùy chọn): Một hàm callback sẽ được thực thi
+                                             sau khi mã QR được quét thành công.
+                                             Hàm này nhận 'display_name' làm tham số duy nhất.
         Lỗi có thể xảy ra:
             ZaloLoginError: Nếu bất kỳ bước nào của quá trình đăng nhập QR thất bại.
         """
@@ -95,6 +98,12 @@ class ZaloAPI(object):
             scan_info = self._qr_wait_for_scan(session, _user_agent, login_version, qr_code)
             display_name = scan_info.get("display_name", "Người dùng không xác định")
             logger.info(f"Mã QR đã được quét bởi: {display_name}. Vui lòng xác nhận đăng nhập trên điện thoại của bạn.")
+
+            if on_scanned:
+                try:
+                    on_scanned(display_name)
+                except Exception as cb_exc:
+                    logger.error(f"Lỗi khi thực thi callback 'on_scanned': {cb_exc}")
 
             confirm_result = self._qr_wait_for_confirm(session, _user_agent, login_version, qr_code)
             if confirm_result.get("error_code") == -13:

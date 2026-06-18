@@ -84,15 +84,27 @@ except KeyboardInterrupt:
 def login_and_create_subbot(client, thread_id, thread_type, message_object, bot_name, bot_prefix, admin_id):
     qr_file_path = os.path.join(CACHE_DIR, f"qr_login_{bot_name}_{int(time.time())}.png")
     temp_client = None
+    
+    init_msg = None
+    qr_message_result = [None]
+
+    def delete_msg(msg_res):
+        if msg_res and hasattr(msg_res, "msgId"):
+            try:
+                cli_msg_id = getattr(msg_res, "cliMsgId", str(int(time.time() * 1000)))
+                client.undoMessage(msgId=msg_res.msgId, cliMsgId=cli_msg_id, thread_id=thread_id, thread_type=thread_type)
+            except:
+                pass
 
     try:
         temp_client = ZaloAPI(phone=None, password=None, imei=None, auto_login=False)
         
-        _reply(client, "⏳ Đang khởi tạo QR đăng nhập cho bot con...", message_object, thread_id, thread_type)
+        init_msg = _reply(client, "⏳ Đang khởi tạo QR đăng nhập cho bot con...", message_object, thread_id, thread_type)
         
         def send_qr_to_user(path_to_qr):
             if os.path.exists(path_to_qr):
-                client.sendLocalImage(
+                delete_msg(init_msg)
+                qr_message_result[0] = client.sendLocalImage(
                     imagePath=path_to_qr,
                     thread_id=thread_id,
                     thread_type=thread_type,
@@ -100,9 +112,14 @@ def login_and_create_subbot(client, thread_id, thread_type, message_object, bot_
                     ttl=100000
                 )
         
+        def on_scanned_callback(display_name):
+            delete_msg(qr_message_result[0])
+            _reply(client, f"✔ Mã QR đã được quét bởi: {display_name}.\nVui lòng xác nhận đăng nhập trên điện thoại của bạn.", message_object, thread_id, thread_type)
+
         temp_client.loginWithQR(
             qr_path=qr_file_path,
-            on_qr_generated=send_qr_to_user
+            on_qr_generated=send_qr_to_user,
+            on_scanned=on_scanned_callback
         )
         
         if temp_client.isLoggedIn():
@@ -137,11 +154,18 @@ def login_and_create_subbot(client, thread_id, thread_type, message_object, bot_
                 _reply(client, f"❌ Cấu hình thành công nhưng bật bot thất bại: {result}", message_object, thread_id, thread_type)
 
     except ZaloLoginError as e:
-        if "Het thoi gian cho quet ma QR" in str(e):
+        delete_msg(init_msg)
+        delete_msg(qr_message_result[0])
+        err_msg = str(e)
+        if "Het thoi gian cho quet ma QR" in err_msg or "Hết thời gian chờ" in err_msg:
             _reply(client, "⏰ Hết thời gian chờ quét mã QR.", message_object, thread_id, thread_type)
+        elif "tu choi" in err_msg or "từ chối" in err_msg:
+            _reply(client, "❌ Xác nhận đăng nhập đã bị từ chối trên điện thoại của bạn.", message_object, thread_id, thread_type)
         else:
-            _reply(client, f"❌ Lỗi đăng nhập Zalo: {str(e)[:150]}", message_object, thread_id, thread_type)
+            _reply(client, f"❌ Lỗi đăng nhập Zalo: {err_msg[:150]}", message_object, thread_id, thread_type)
     except Exception as e:
+        delete_msg(init_msg)
+        delete_msg(qr_message_result[0])
         _reply(client, f"❌ Đã xảy ra lỗi: {str(e)[:150]}", message_object, thread_id, thread_type)
     finally:
         if os.path.exists(qr_file_path):
