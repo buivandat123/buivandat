@@ -1008,6 +1008,8 @@ class MainBot(ZaloAPI):
     # ══════════════════════════════════════════════════
     def onMessage(self, mid, author_id, message, message_object, thread_id, thread_type):
         update_activity()
+        if str(author_id) == str(self.uid):
+            return
         
         try:
             author_id_str = str(author_id)

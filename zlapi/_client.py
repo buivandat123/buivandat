@@ -5,6 +5,10 @@ import re
 import random
 import websockets
 import requests, json
+import struct
+import websocket
+import hashlib
+from io import BytesIO
 
 from .models import *
 from ._package import *
@@ -12,6 +16,7 @@ from . import _util, _state
 from .logging import Logging
 from websockets.sync.client import connect
 from concurrent.futures import ThreadPoolExecutor
+from ._threads import ThreadType
 
 pool = ThreadPoolExecutor(max_workers=9999)
 logger = Logging(theme="catppuccin-mocha", log_text_color="black")
