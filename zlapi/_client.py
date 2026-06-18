@@ -4775,11 +4775,7 @@ class ZaloAPI(object):
                 except:
                     results = {"error_code": 1337, "error_message": results}
             
-            return (
-                Group.fromDict(results, None) 
-                if thread_type == ThreadType.GROUP else 
-                User.fromDict(results, None)
-            )
+            return User.fromDict(results, None)
             
         error_code = data.get("error_code")
         error_message = data.get("error_message") or data.get("data")
