@@ -537,7 +537,11 @@ class MainBot(ZaloAPI):
         p = self.settings.get("prefix", PREFIX)
         arg = msg.strip()[len(p):].strip().lower()
 
-        if arg == "bot on":
+        if arg == "bot":
+            self._bot_enabled = not self._bot_enabled
+            status_str = "🟢 BẬT" if self._bot_enabled else "🔴 TẮT"
+            _reply(self, obj, tid, ttype, f"SUCCESS\n    {status_str} Bot đã được thay đổi trạng thái toàn cục!", sty_ok)
+        elif arg == "bot on":
             self._bot_enabled = True
             _reply(self, obj, tid, ttype, "SUCCESS\n    🟢 Bot đã bật toàn cục!", sty_ok)
         elif arg == "bot off":
@@ -1022,7 +1026,13 @@ class MainBot(ZaloAPI):
             msg_str = str(message) if message else ""
             if not msg_str and message_object and message_object.content:
                 msg_str = str(message_object.content)
-            logger.info(f"📨 Tin nhắn từ {name} ({author_id}) | Box {thread_id} ({thread_type.name}): {msg_str}")
+            
+            prefix = self.settings.get("prefix", PREFIX)
+            is_admin = check_is_admin(author_id)
+            is_bot_cmd = msg_str.strip().startswith(prefix + "bot")
+
+            if thread_type == ThreadType.GROUP and is_admin and is_bot_cmd:
+                logger.info(f"📨 Tin nhắn từ {name} ({author_id}) | Box {thread_id} ({thread_type.name}): {msg_str}")
         except:
             pass
 
