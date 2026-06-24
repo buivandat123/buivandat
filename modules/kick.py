@@ -101,4 +101,4 @@ def handle_kick(message, message_object, thread_id, thread_type, author_id, clie
     except Exception as e:
         _reply(client,message_object,thread_id,thread_type,f"ERROR\n    {str(e)[:60]}",sty_err)
 
-def LIGHT(): return {"kick": handle_kick}
+def Kryzis(): return {"kick": handle_kick}

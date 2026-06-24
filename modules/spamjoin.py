@@ -349,5 +349,5 @@ def handle_spj_command(message, message_object, thread_id, thread_type, author_i
         message_object, thread_id, thread_type, ttl=30000
     )
 
-def LIGHT():
+def Kryzis():
     return {"spj": handle_spj_command}

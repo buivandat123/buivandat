@@ -96,7 +96,7 @@ def handle_menu(message, message_object, thread_id, thread_type, author_id, clie
         thread_type=thread_type, ttl=120000
     )
 
-def LIGHT():
+def Kryzis():
     """Export cho noprefix - tu dong chay khi go 'menu' hoac 'help'"""
     return {
         "menu": handle_menu,

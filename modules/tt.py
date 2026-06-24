@@ -393,7 +393,7 @@ def handle_tt_page(message, message_object, thread_id, thread_type, author_id, c
     except:
         pass
 
-def LIGHT():
+def Kryzis():
     return {
         "tiktok": handle_tiktok,
         "tt": handle_tt_page

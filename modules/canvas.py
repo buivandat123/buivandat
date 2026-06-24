@@ -1,4 +1,6 @@
+# modules/canvas.py
 import os
+import re
 import random
 import requests
 from io import BytesIO
@@ -20,6 +22,7 @@ _bg_cache = None
 _mask_cache = {}
 _font_cache = {}
 
+# ================= FONT =================
 def Font(size, bold=False):
     key = f"{size}_{bold}"
     if key in _font_cache:
@@ -76,6 +79,7 @@ def FitText(draw, text, font, max_width):
         out += ch
     return out + ell
 
+# ================= MASK =================
 def RoundMask(w, h, r, aa=4):
     key = f"{w}_{h}_{r}_{aa}"
     if key in _mask_cache:
@@ -89,13 +93,32 @@ def RoundMask(w, h, r, aa=4):
     _mask_cache[key] = result
     return result
 
-def Glass(img, box, radius=36, alpha=GlassFill, blur=24, aa=4):
-    x1, y1, x2, y2 = box
+# ================= SOFT SHADOW =================
+def SoftShadow(Img, Box, Radius, Blur=26, Offset=(0, 10), Alpha=95):
+    x1, y1, x2, y2 = map(int, Box)
     bw, bh = x2 - x1, y2 - y1
-    blur_img = img.crop(box).filter(ImageFilter.GaussianBlur(blur))
+    dx, dy = Offset
+    Layer = Image.new("RGBA", Img.size, (0, 0, 0, 0))
+    M = Image.new("L", (bw + Blur * 4, bh + Blur * 4), 0)
+    ImageDraw.Draw(M).rounded_rectangle((Blur * 2, Blur * 2, Blur * 2 + bw, Blur * 2 + bh), Radius, fill=255)
+    M = M.filter(ImageFilter.GaussianBlur(Blur))
+    Shadow = Image.new("RGBA", M.size, (0, 0, 0, Alpha))
+    Layer.paste(Shadow, (x1 + dx - Blur * 2, y1 + dy - Blur * 2), M)
+    Img.alpha_composite(Layer)
+
+# ================= GLASS EFFECT =================
+def Glass(img, box, radius=36, alpha=GlassFill, blur=24, aa=4):
+    x1, y1, x2, y2 = map(int, box)
+    bw, bh = x2 - x1, y2 - y1
+    
+    # Soft shadow
+    SoftShadow(img, box, radius, Blur=26, Offset=(0, 10), Alpha=90)
+    
+    # Blur background
+    blur_img = img.crop((x1, y1, x2, y2)).filter(ImageFilter.GaussianBlur(blur))
     layer = Image.alpha_composite(blur_img, Image.new("RGBA", (bw, bh), alpha))
     mask = RoundMask(bw, bh, radius, aa=aa)
-    img.paste(layer, box, mask)
+    img.paste(layer, (x1, y1), mask)
 
 def Gradient(w, h):
     img = Image.new("RGB", (w, h))
@@ -145,29 +168,38 @@ def CreateBackground(w, h):
         _bg_cache = img
     return _bg_cache.copy()
 
-def LoadImage(url, size):
-    w, h = size
-    def blank():
-        img = Image.new("RGBA", (w, h), (40, 45, 60, 255))
-        d = ImageDraw.Draw(img)
-        d.ellipse((5, 5, w-5, h-5), fill=(80, 100, 150))
-        d.ellipse((w//3-15, h//3-10, w//3+5, h//3+10), fill=(255, 255, 255))
-        d.ellipse((w*2//3-15, h//3-10, w*2//3+5, h//3+10), fill=(255, 255, 255))
-        d.arc((w//3, h//2, w*2//3, h*3//4), 0, 180, fill=(255, 255, 255), width=6)
-        return img
-    if not url or not isinstance(url, str):
-        return blank()
-    url = url.strip()
-    if not (url.startswith("http://") or url.startswith("https://")):
-        return blank()
-    try:
-        r = requests.get(url, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
-        if r.status_code != 200 or not r.content:
-            return blank()
-        img = Image.open(BytesIO(r.content)).convert("RGBA")
-        return img.resize((w, h), Image.LANCZOS)
-    except:
-        return blank()
+# ================= LOAD IMAGE =================
+def LoadImage(Url, Size):
+    Wd, Hd = map(int, Size)
+    def Blank():
+        return Image.new("RGBA", (Wd, Hd), (24, 26, 34, 255))
+    if not Url or not isinstance(Url, str):
+        return Blank()
+    Url = Url.strip()
+    if not (Url.startswith("http://") or Url.startswith("https://")):
+        return Blank()
+    Urls = [Url]
+    if "sndcdn.com" in Url:
+        Urls += [
+            re.sub(r"-t\d+x\d+\.", "-t500x500.", Url),
+            re.sub(r"-t\d+x\d+\.", "-large.", Url),
+            re.sub(r"-t\d+x\d+\.", "-t300x300.", Url),
+            re.sub(r"-t\d+x\d+\.", "-t200x200.", Url),
+        ]
+    Seen = set()
+    for U in Urls:
+        if not U or U in Seen:
+            continue
+        Seen.add(U)
+        try:
+            Rq = requests.get(U, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            if Rq.status_code != 200 or not Rq.content:
+                continue
+            Img = Image.open(BytesIO(Rq.content)).convert("RGBA")
+            return Img.resize((Wd, Hd), Image.LANCZOS)
+        except:
+            pass
+    return Blank()
 
 def CropSquare(img):
     w, h = img.size
@@ -180,9 +212,9 @@ def CircleCrop(img, size):
     img.putalpha(mask)
     return img
 
-# ========== AVATAR CỐ ĐỊNH ==========
+# ================= AVATAR CỐ ĐỊNH =================
 MY_AVATAR_URL = "https://cdn.phototourl.com/free/2026-06-16-9b4c2a07-e02d-4b88-a842-b0cd57f49e72.jpg"
-MY_NAME = "Kryzis Bot"
+MY_NAME = "Bui Van Dat"
 _my_avatar = None
 
 def GetMyAvatar(size):
@@ -194,3 +226,14 @@ def GetMyAvatar(size):
 
 def GetMyName():
     return MY_NAME
+
+# ================= EXPORTS =================
+__all__ = [
+    'W', 'H', 'PAD',
+    'BgTop', 'BgBot', 'GlassFill', 'TextTitle', 'TextSub', 'TextDim',
+    'Font', 'FitText',
+    'RoundMask', 'SoftShadow', 'Glass',
+    'Gradient', 'Blobs', 'Noise', 'CreateBackground',
+    'LoadImage', 'CropSquare', 'CircleCrop',
+    'GetMyAvatar', 'GetMyName'
+]

@@ -107,7 +107,7 @@ def handle_chat_command(message, message_object, thread_id, thread_type, author_
             message_object, thread_id, thread_type, ttl=12000
         )
 
-def LIGHT():
+def Kryzis():
     return {
         'chatvar': handle_chat_command,
         'varchat': handle_chat_command

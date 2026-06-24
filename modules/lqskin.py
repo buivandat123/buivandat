@@ -250,7 +250,7 @@ def handle_skinid(message, message_object, thread_id, thread_type, author_id, cl
     
     _reply(client, message_object, thread_id, thread_type, f"❌ Không tìm thấy ID: {search_id}")
 
-def LIGHT():
+def Kryzis():
     return {
         "ds": handle_ds,
         "base": handle_base,

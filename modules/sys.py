@@ -192,5 +192,5 @@ def handle_sys(message, message_object, thread_id, thread_type, author_id, clien
     
     _reply(client, message_object, thread_id, thread_type, "\n".join(lines), sty_info)
 
-def LIGHT():
+def Kryzis():
     return {"sys": handle_sys}

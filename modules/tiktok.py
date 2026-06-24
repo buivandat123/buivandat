@@ -206,5 +206,5 @@ Ví dụ: tiktok chung.hong4549
     except:
         pass
 
-def LIGHT():
+def Kryzis():
     return {"tiktok": handle_tiktok}

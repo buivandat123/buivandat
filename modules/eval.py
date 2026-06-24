@@ -145,5 +145,5 @@ def handle_eval(message, message_object, thread_id, thread_type, author_id, clie
     finally:
         sys.stdout = old_stdout
 
-def LIGHT():
+def Kryzis():
     return {"eval": handle_eval}

@@ -326,5 +326,5 @@ Ví dụ:
     )
     thread.start()
 
-def LIGHT():
+def Kryzis():
     return {"spoll": handle_spoll_command}

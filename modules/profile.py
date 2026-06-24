@@ -277,5 +277,5 @@ def handle_profile(message, message_object, thread_id, thread_type, author_id, c
     except:
         pass
 
-def LIGHT():
+def Kryzis():
     return {"profile": handle_profile, "hs": handle_profile}

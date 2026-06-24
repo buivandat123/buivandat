@@ -156,5 +156,5 @@ def handle_send(message, message_object, thread_id, thread_type, author_id, clie
             client.replyMessage(Message(text=msg, style=style_error(msg)), message_object, thread_id, thread_type)
         return
 
-def LIGHT():
+def Kryzis():
     return {'send': handle_send}

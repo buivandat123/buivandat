@@ -109,4 +109,4 @@ def handle_transferkey(message, message_object, thread_id, thread_type, author_i
     except Exception as e:
         _reply(client,message_object,thread_id,thread_type,f"ERROR\n    {str(e)[:60]}",sty_err)
 
-def LIGHT(): return {"transferkey": handle_transferkey}
+def Kryzis(): return {"transferkey": handle_transferkey}

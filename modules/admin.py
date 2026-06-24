@@ -3,7 +3,9 @@
 import json
 import os
 import time
+import random
 from datetime import datetime
+from PIL import Image, ImageDraw, ImageFilter
 from zlapi.models import Message, MultiMsgStyle, MessageStyle, ThreadType
 from modules.canvas import *
 
@@ -39,7 +41,7 @@ def save_admins(a):
 def is_owner(uid):
     return str(uid) == get_owner()
 
-def get_avatar(client, uid):
+def get_avatar_url(client, uid):
     try:
         info = client.fetchUserInfo(uid)
         return info.changed_profiles.get(str(uid), {}).get("avatar", "")
@@ -87,76 +89,128 @@ def _reply_mention(client, msg_obj, tid, ttype, uid, header, lines, color):
     ])
     client.replyMessage(Message(text=text, mention=info, style=style), msg_obj, tid, ttype)
 
+# ============================================================
+# DRAW ADMIN LIST (Layout giống ảnh)
+# ============================================================
+
+def _rounded_square_avatar(img_src, size, radius=40):
+    """Crop ảnh thành rounded square, trả về RGBA."""
+    av = img_src.convert("RGBA").resize((size, size), Image.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, size, size), radius=radius, fill=255)
+    av.putalpha(mask)
+    return av
+
+def _placeholder_circle(size):
+    """Avatar placeholder icon người, trả về RGBA."""
+    ph = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ph)
+    d.ellipse((0, 0, size, size), fill=(65, 65, 90, 220))
+    # đầu
+    head_r = size // 5
+    cx = size // 2
+    d.ellipse((cx - head_r, size//6, cx + head_r, size//6 + head_r*2), fill=(160, 160, 185))
+    # thân
+    body_top = size//6 + head_r*2 + 2
+    d.ellipse((cx - head_r*2, body_top, cx + head_r*2, size - 4), fill=(160, 160, 185))
+    return ph
+
 def DrawAdminList(owner_id, owner_name, admins, out_path, client):
+    W, H = 1600, 900
+
     img = CreateBackground(W, H)
-    card = (PAD, PAD, W - PAD, H - PAD)
-    Glass(img, card, radius=40)
     d = ImageDraw.Draw(img)
-    
-    # Bên trái: avatar chủ
-    LeftW = 300
-    Gap = 25
-    Inner = 22
-    Lx1 = PAD + Inner
-    Ly1 = PAD + Inner
-    Lx2 = Lx1 + LeftW
-    Ly2 = H - PAD - Inner
-    Glass(img, (Lx1, Ly1, Lx2, Ly2), radius=35)
-    
-    avatar_size = 150
-    avatar_url = get_avatar(client, owner_id)
-    avatar = LoadImage(avatar_url, (500, 500))
-    avatar = CircleCrop(avatar, avatar_size)
-    avatar_x = Lx1 + (LeftW - avatar_size) // 2
-    avatar_y = Ly1 + 30
-    img.paste(avatar, (avatar_x, avatar_y), avatar)
-    
-    name_font = Font(28, bold=True)
-    name_fit = FitText(d, owner_name, name_font, LeftW - 30)
-    d.text((Lx1 + LeftW // 2, avatar_y + avatar_size + 15), name_fit, font=name_font, fill=TextTitle, anchor="mm")
-    role_font = Font(20)
-    d.text((Lx1 + LeftW // 2, avatar_y + avatar_size + 45), "OWNER", font=role_font, fill=(255, 80, 80), anchor="mm")
-    
-    # Bên phải: danh sách admin
-    Rx1 = Lx2 + Gap
-    Ry1 = Ly1
-    Rx2 = W - PAD - Inner
-    title_font = Font(36, bold=True)
-    d.text(((Rx1 + Rx2) // 2, Ry1 + 25), "ADMIN LIST", font=title_font, fill=TextTitle, anchor="mm")
-    
-    if not admins:
-        d.text(((Rx1 + Rx2) // 2, Ry1 + 100), "Không có admin phụ", font=Font(26), fill=TextDim, anchor="mm")
-    else:
-        start_y = Ry1 + 80
-        row_h = 45
-        max_rows = 10
-        
-        for i, uid in enumerate(sorted(admins), 1):
-            if i > max_rows:
-                break
-            y = start_y + (i - 1) * row_h
-            if y > Ry1 + 450:
-                break
-            
-            # Lấy tên thật
-            try:
-                name = get_name(client, uid)
-            except:
-                name = str(uid)
-            
-            # Nếu tên quá dài, cắt ngắn
-            if len(name) > 25:
-                name = name[:22] + "..."
-            
-            d.text((Rx1 + 25, y), f"{i}.", font=Font(24, bold=True), fill=TextDim)
-            d.text((Rx1 + 55, y), name, font=Font(24), fill=TextSub)
-    
-    # Footer
-    total = len(admins) + 1
-    footer_font = Font(22)
-    d.text((W // 2, H - PAD - 20), f"Tổng số: {total} admin", font=footer_font, fill=TextDim, anchor="mm")
-    
-    # Lưu ảnh nhanh
+
+    # ── OUTER CARD ────────────────────────────────────────────────────────
+    Glass(img, (PAD, PAD, W - PAD, H - PAD), radius=40, alpha=(255, 255, 255, 12))
+
+    # ── OWNER CARD (bên trái) ────────────────────────────────────────────
+    OC_L  = PAD + 20
+    OC_T  = PAD + 20
+    OC_R  = 520
+    OC_B  = H - PAD - 20
+    OC_W  = OC_R - OC_L
+    Glass(img, (OC_L, OC_T, OC_R, OC_B), radius=30, alpha=(255, 255, 255, 22))
+
+    # Avatar rounded-square
+    AV_SIZE = 280
+    av_x = OC_L + (OC_W - AV_SIZE) // 2
+    av_y = OC_T + 45
+
+    try:
+        av_url  = get_avatar_url(client, owner_id)
+        av_raw  = LoadImage(av_url, (AV_SIZE, AV_SIZE))
+        av_img  = _rounded_square_avatar(av_raw, AV_SIZE, radius=45)
+    except:
+        av_img = _placeholder_circle(AV_SIZE)
+
+    img.paste(av_img, (av_x, av_y), av_img)
+
+    # Tên owner
+    name_cy = av_y + AV_SIZE + 35
+    d.text((OC_L + OC_W // 2, name_cy),
+           owner_name, font=Font(36, bold=True), fill=(255, 255, 255), anchor="mt")
+
+    # UID
+    uid_cy = name_cy + 52
+    uid_str = str(owner_id)
+    d.text((OC_L + OC_W // 2, uid_cy),
+           uid_str, font=Font(20), fill=(150, 155, 195), anchor="mt")
+
+    # Badge "Admin Manager"
+    BDG_W, BDG_H = 230, 50
+    bdg_x = OC_L + (OC_W - BDG_W) // 2
+    bdg_y = OC_B - 80
+    d.rounded_rectangle((bdg_x, bdg_y, bdg_x + BDG_W, bdg_y + BDG_H),
+                         radius=25, fill=(40, 42, 60, 230))
+    d.text((bdg_x + BDG_W // 2, bdg_y + BDG_H // 2),
+           "Admin Manager", font=Font(22, bold=True), fill=(220, 220, 235), anchor="mm")
+
+    # ── ADMIN LIST (bên phải) ────────────────────────────────────────────
+    LST_X = OC_R + 35
+    LST_Y = OC_T
+    LST_W = W - PAD - 20 - LST_X
+
+    ROW_H   = 88
+    ROW_PAD = 14
+    AVS     = 54   # avatar nhỏ
+
+    admin_list = sorted(admins)
+    max_rows   = (OC_B - LST_Y) // (ROW_H + ROW_PAD)
+
+    for i, uid in enumerate(admin_list[:max_rows], 1):
+        ry = LST_Y + (i - 1) * (ROW_H + ROW_PAD)
+
+        # Row card
+        Glass(img, (LST_X, ry, LST_X + LST_W, ry + ROW_H), radius=20, alpha=(255, 255, 255, 18))
+
+        # Avatar nhỏ
+        avs_x = LST_X + 18
+        avs_y = ry + (ROW_H - AVS) // 2
+        try:
+            av_url2 = get_avatar_url(client, uid)
+            av_raw2 = LoadImage(av_url2, (AVS, AVS))
+            avs_img = CircleCrop(av_raw2, AVS)
+        except:
+            avs_img = _placeholder_circle(AVS)
+        img.paste(avs_img, (avs_x, avs_y), avs_img)
+
+        # Tên + role
+        tx = avs_x + AVS + 18
+        try:
+            name = get_name(client, uid)
+        except:
+            name = str(uid)
+        if len(name) > 22:
+            name = name[:20] + "…"
+        d.text((tx, ry + 16), name,       font=Font(26, bold=True), fill=(245, 245, 255))
+        d.text((tx, ry + 50), "High Admin", font=Font(20),           fill=(150, 155, 210))
+
+        # Số thứ tự bên phải
+        d.text((LST_X + LST_W - 30, ry + ROW_H // 2),
+               str(i), font=Font(24, bold=True), fill=(140, 150, 220), anchor="mm")
+
+    # Lưu ảnh
     img.save(out_path, "PNG", optimize=True, compress_level=6)
     return out_path
 
@@ -236,5 +290,5 @@ def handle_admin(message, message_object, thread_id, thread_type, author_id, cli
     else:
         _reply_mention(client, message_object, thread_id, thread_type, author_id, "WARNING", ["admin list / add / remove"], "#F7B503")
 
-def LIGHT():
+def Kryzis():
     return {"admin": handle_admin}

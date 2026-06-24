@@ -282,5 +282,5 @@ def handle_stkdisc_command(message, message_object, thread_id, thread_type, auth
     
     threading.Thread(target=process_and_send, daemon=True).start()
 
-def LIGHT():
+def Kryzis():
     return {'stkdisc': handle_stkdisc_command}

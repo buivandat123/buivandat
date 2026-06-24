@@ -181,5 +181,5 @@ Ví dụ:
             except:
                 pass
 
-def LIGHT():
+def Kryzis():
     return {"capweb": handle_capweb_command}

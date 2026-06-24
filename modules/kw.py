@@ -283,5 +283,5 @@ def check_keyword(message_text, client, thread_id, thread_type):
 def on_message(message_text, message_object, thread_id, thread_type, client):
     check_keyword(message_text, client, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     return {"kw": handle_kw_command}

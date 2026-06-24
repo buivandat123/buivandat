@@ -204,5 +204,5 @@ Dừng: {prefix}treo stop
         message_object, thread_id, thread_type, ttl=30000
     )
 
-def LIGHT():
+def Kryzis():
     return {"treo": handle_treo_command}

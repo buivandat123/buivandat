@@ -110,4 +110,4 @@ def handle_phonhom(message, message_object, thread_id, thread_type, author_id, c
     except Exception as e:
         _reply(client,message_object,thread_id,thread_type,f"ERROR\n    {str(e)[:60]}",sty_err)
 
-def LIGHT(): return {"phonhom": handle_phonhom}
+def Kryzis(): return {"phonhom": handle_phonhom}

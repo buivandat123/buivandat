@@ -206,5 +206,5 @@ def handle_filemanager(message, message_object, thread_id, thread_type, author_i
     else:
         _reply(client, message_object, thread_id, thread_type, f"❌ Lệnh không hợp lệ: {cmd}")
 
-def LIGHT():
+def Kryzis():
     return {"filemanager": handle_filemanager}

@@ -62,5 +62,5 @@ def handle_delgr(message, message_object, thread_id, thread_type, author_id, cli
             msg = f"WARNING\n    Lỗi giải tán nhóm: {err_raw}"
         client.replyMessage(Message(text=msg, style=warning_style()), message_object, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     return {'delgr': handle_delgr}

@@ -138,7 +138,7 @@ def handle_ytvideo(message, message_object, thread_id, thread_type, author_id, c
     except Exception as e:
         _reply(client, message_object, thread_id, thread_type, f"❌ {str(e)[:50]}")
 
-def LIGHT():
+def Kryzis():
     return {
         "ytaudio": handle_ytaudio,
         "ytvideo": handle_ytvideo

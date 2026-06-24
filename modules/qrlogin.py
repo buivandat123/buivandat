@@ -116,7 +116,7 @@ Sau khi có QR:
     login_thread.daemon = True
     login_thread.start()
 
-def LIGHT():
+def Kryzis():
     return {
         'qrlogin': handle_qrlogin_command
     }

@@ -46,5 +46,5 @@ def handle_leave(message, message_object, thread_id, thread_type, author_id, cli
     
     threading.Thread(target=leave, daemon=True).start()
 
-def LIGHT():
+def Kryzis():
     return {"leave": handle_leave}

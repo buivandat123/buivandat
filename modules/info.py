@@ -363,5 +363,5 @@ def handle_info(message, message_object, thread_id, thread_type, author_id, clie
         client.replyMessage(Message(text=f"Loi: {str(e)[:80]}"),
                           message_object, thread_id, thread_type, ttl=60000)
 
-def LIGHT():
+def Kryzis():
     return {"info": handle_info}

@@ -149,5 +149,5 @@ def handle_creategroup(message, message_object, thread_id, thread_type, author_i
         msg = f"ERROR\n    {str(e)[:50]}"
         client.replyMessage(Message(text=msg, style=style_error(msg)), message_object, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     return {'creategroup': handle_creategroup}

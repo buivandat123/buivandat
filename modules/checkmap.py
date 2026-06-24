@@ -319,6 +319,6 @@ def handle_checkmap_command(message, message_object, thread_id, thread_type, aut
             message_object, thread_id, thread_type, ttl=30000
         )
 
-def LIGHT():
-    """Khởi tạo module"""
+def Kryzis():
+    """Khởi tạo modeule"""
     return {"checkmap": handle_checkmap_command}

@@ -115,5 +115,5 @@ def handle_lqacc_command(message, message_object, thread_id, thread_type, author
             message_object, thread_id, thread_type, ttl=60000
         )
 
-def LIGHT():
+def Kryzis():
     return {"lqacc": handle_lqacc_command}

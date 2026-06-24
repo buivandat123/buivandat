@@ -111,7 +111,7 @@ def handle_setavt(message, message_object, thread_id, thread_type, author_id, cl
            f"3. Chọn ảnh mới\n\n"
            f"Hoặc dùng lệnh {PREFIX}getavt để lấy avatar người khác")
 
-def LIGHT():
+def Kryzis():
     return {
         "getavt": handle_getavt,
         "setavt": handle_setavt

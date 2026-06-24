@@ -143,5 +143,5 @@ Ví dụ:
             message_object, thread_id, thread_type, ttl=30000
         )
 
-def LIGHT():
+def Kryzis():
     return {"gpt": handle_gpt_command}

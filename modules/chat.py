@@ -148,7 +148,7 @@ def handle_chat_command(message, message_object, thread_id, thread_type, author_
         message_object, thread_id, thread_type, ttl=120000
     )
 
-def LIGHT():
+def Kryzis():
     """Hàm export cho LIGHT.py"""
     return {
         'chat': handle_chat_command

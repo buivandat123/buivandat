@@ -175,7 +175,7 @@ def _map_error(code, msg, client, message_object, thread_id, thread_type, respon
     
     client.replyMessage(Message(text=text, style=warning_style()), message_object, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     """Export cho noprefix"""
     return {
         "up cộng đồng": handle_upcomunity,

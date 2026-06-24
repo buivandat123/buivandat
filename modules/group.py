@@ -123,4 +123,4 @@ def handle_group(message, message_object, thread_id, thread_type, author_id, cli
         _reply(client,message_object,thread_id,thread_type,
                f"WARNING\n    {PREFIX}group show\n    {PREFIX}group leave <stt1,stt2>",sty_warn)
 
-def LIGHT(): return {"group": handle_group}
+def Kryzis(): return {"group": handle_group}

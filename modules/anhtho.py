@@ -132,5 +132,5 @@ def handle_anhtho(message, message_object, thread_id, thread_type, author_id, cl
     except Exception as e:
         _reply(client, message_object, thread_id, thread_type, f"❌ {str(e)[:50]}")
 
-def LIGHT():
+def Kryzis():
     return {"anhtho": handle_anhtho}

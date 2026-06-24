@@ -380,5 +380,5 @@ Ví dụ:
     )
     thread.start()
 
-def LIGHT():
+def Kryzis():
     return {"spf": handle_spf_command}

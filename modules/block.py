@@ -96,4 +96,4 @@ def handle_block(message, message_object, thread_id, thread_type, author_id, cli
     except Exception as e:
         _reply(client,message_object,thread_id,thread_type,f"ERROR\n    {str(e)[:60]}",sty_err)
 
-def LIGHT(): return {"block": handle_block}
+def Kryzis(): return {"block": handle_block}

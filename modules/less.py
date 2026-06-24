@@ -423,7 +423,7 @@ def handle_les_command(message, message_object, thread_id, thread_type, author_i
     except Exception as e:
         client.replyMessage(Message(text=f"❌ Lỗi phân tích: {str(e)}"), message_object, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     return {
         'les': handle_les_command,
         'less': handle_les_command,

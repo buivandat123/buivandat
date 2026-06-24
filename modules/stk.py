@@ -334,5 +334,5 @@ def handle_stk_command(message, message_object, thread_id, thread_type, author_i
     threading.Thread(target=process_and_send, daemon=True).start()
 
 # QUAN TRỌNG: Hàm LIGHT để bot nhận diện module
-def LIGHT():
+def Kryzis():
     return {'stk': handle_stk_command}

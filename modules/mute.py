@@ -137,5 +137,5 @@ def handle_mute(message, message_object, thread_id, thread_type, author_id, clie
     
     _reply(client, message_object, thread_id, thread_type, f"🔇 Đã mute {minutes if minutes>0 else 'vĩnh viễn'} phút\n📝 {reason}")
 
-def LIGHT():
+def Kryzis():
     return {"mute": handle_mute}

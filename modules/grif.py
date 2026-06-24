@@ -126,5 +126,5 @@ def handle_grif(message, message_object, thread_id, thread_type, author_id, clie
     except Exception as e:
         _reply(client, message_object, thread_id, thread_type, f"ERROR\n    {str(e)[:60]}", sty_err)
 
-def LIGHT():
+def Kryzis():
     return {"grif": handle_grif, "ifgr": handle_grif}

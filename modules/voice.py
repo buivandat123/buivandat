@@ -116,7 +116,7 @@ def handle_voice_command(message, message_object, thread_id, thread_type, author
     # Xóa file tạm
     delete_file(audio_file)
 
-def LIGHT():
+def Kryzis():
     """Hàm export cho LIGHT.py"""
     return {
         'voice': handle_voice_command

@@ -155,5 +155,5 @@ def get_blocked_status(message, message_object, thread_id, thread_type, author_i
     
     client.replyMessage(Message(text=msg, style=style_success(msg)), message_object, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     return {'unblockgroup': handle_unblock, 'blockstatus': get_blocked_status}

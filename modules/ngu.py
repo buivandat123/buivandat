@@ -460,7 +460,7 @@ def handle_ngu_command(message, message_object, thread_id, thread_type, author_i
         client.replyMessage(Message(text=f"❌ Lỗi phân tích độ ngu: {str(e)}"), 
                           message_object, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     return {
         'ngu': handle_ngu_command,
         'nguu': handle_ngu_command,

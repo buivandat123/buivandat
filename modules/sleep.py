@@ -106,7 +106,7 @@ def handle_settime(message, message_object, thread_id, thread_type, author_id, c
     except:
         _reply(client, message_object, thread_id, thread_type, "❌ Nhập số")
 
-def LIGHT():
+def Kryzis():
     return {
         "sleep": handle_sleep,
         "wake": handle_wake,

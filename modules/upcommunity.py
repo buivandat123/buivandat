@@ -102,7 +102,7 @@ def _map_error(code, msg, client, message_object, thread_id, thread_type):
         text = f"WARNING\n    Lỗi #{code}: {msg}"
     client.replyMessage(Message(text=text, style=warning_style()), message_object, thread_id, thread_type)
 
-def LIGHT():
+def Kryzis():
     return {
         'upcommunity': handle_upcommunity,
         'upcom': handle_upcommunity

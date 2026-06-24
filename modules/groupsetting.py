@@ -119,4 +119,4 @@ def handle_groupsetting(message, message_object, thread_id, thread_type, author_
         lines=[f"  {PREFIX}{c.replace('_',' ')} " for c in CMDS]
         _mention_send(client, author_id, thread_id, thread_type, "CÀI ĐẶT NHÓM ⚙️", lines, "#F7B503")
 
-def LIGHT(): return {"groupsetting": handle_groupsetting}
+def Kryzis(): return {"groupsetting": handle_groupsetting}

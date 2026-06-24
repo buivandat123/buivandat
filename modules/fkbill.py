@@ -244,5 +244,5 @@ def handle_fkbill(message, message_object, thread_id, thread_type, author_id, cl
         except Exception as e:
             _reply(client, message_object, thread_id, thread_type, f"❌ Lỗi: {str(e)}")
 
-def LIGHT():
+def Kryzis():
     return {"fkbill": handle_fkbill}

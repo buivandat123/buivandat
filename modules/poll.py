@@ -121,4 +121,4 @@ def handle_endpoll(message, message_object, thread_id, thread_type, author_id, c
     except Exception as e:
         _reply(client,message_object,thread_id,thread_type,f"ERROR\n    {str(e)[:60]}",sty_err)
 
-def LIGHT(): return {"poll": handle_poll, "endpoll": handle_endpoll}
+def Kryzis(): return {"poll": handle_poll, "endpoll": handle_endpoll}

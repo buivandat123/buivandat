@@ -107,4 +107,4 @@ def send_reset_success_message(client):
     except Exception as e:
         print(f"Lỗi sau restart: {e}")
 
-def LIGHT(): return {"reload": handle_reset_command}
+def Kryzis(): return {"reload": handle_reset_command}

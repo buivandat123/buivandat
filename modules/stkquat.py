@@ -155,5 +155,5 @@ def handle_stkquat(message, message_object, thread_id, thread_type, author_id, c
         if temp_output and os.path.exists(temp_output):
             os.remove(temp_output)
 
-def LIGHT():
+def Kryzis():
     return {"stkquat": handle_stkquat}

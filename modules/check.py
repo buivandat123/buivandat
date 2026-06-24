@@ -210,7 +210,7 @@ def check_cmd(message, message_object, thread_id, thread_type, author_id, client
     img = build_check_image(prefix, uptime, ping_ms, thread_id, author_id)
     _send_image(client, img, thread_id, thread_type, ttl=120000)
 
-def LIGHT():
+def Kryzis():
     return {
         "check": check_cmd,
         "chk": check_cmd

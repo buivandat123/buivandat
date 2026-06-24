@@ -266,7 +266,7 @@ def handle_dl_command(message, message_object, thread_id, thread_type, author_id
                 except:
                     pass
 
-def LIGHT():
+def Kryzis():
     return {
         'dl': handle_dl_command
     }

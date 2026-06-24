@@ -108,5 +108,5 @@ Ví dụ:
         )
         time.sleep(0.5)
 
-def LIGHT():
+def Kryzis():
     return {"map": handle_map_command}

@@ -10,8 +10,9 @@ from zlapi.models import Message, MultiMsgStyle, MessageStyle, ThreadType
 from zlapi.logging import Logging
 
 from asset.config import API_KEY, SECRET_KEY, IMEI, SESSION_COOKIES, ADMIN, PREFIX
-from LIGHT import CommandHandler, check_is_admin, schedule_delete, get_delete_delay
+from Kryzis import CommandHandler, check_is_admin, schedule_delete, get_delete_delay
 from modules.rs import send_reset_success_message
+from modules.scl import Kryzis as scl_module, user_states as scl_user_states, handle_message as scl_handle_message
 from modules.lqskin import handle_skin_choice, user_states
 from modules.sleep import update_activity, is_sleeping, wake_up
 from modules.mute import is_muted
@@ -373,9 +374,10 @@ class BlockedCommandStub:
 #  MAIN BOT
 # ══════════════════════════════════════════════════════
 class MainBot(ZaloAPI):
-    def __init__(self, api_key, secret_key, imei, session_cookies):
+    def __init__(self, api_key, secret_key, imei, session_cookies, prefix=None):
         super().__init__(api_key, secret_key, imei, session_cookies)
-        self.settings = {"prefix": PREFIX}
+        # ✅ SỬA: Cho phép bot con dùng prefix riêng
+        self.settings = {"prefix": prefix if prefix else PREFIX}
         self.ADMIN = str(ADMIN)
         self.ADM = []
         self.duyetbox_data = {}
@@ -404,7 +406,11 @@ class MainBot(ZaloAPI):
             raise RuntimeError("Không xác định được UID bot.")
 
         self.command_handler = CommandHandler(self)
-        logger.info(f"✅ [{self.ns('name')}] UID: {self.uid}")
+        logger.info(f"✅ [{self.ns('name')}] UID: {self.uid} | Prefix: {self.settings.get('prefix')}")
+
+    def get_bot_prefix(self):
+        """Lấy prefix của bot (cho bot con)"""
+        return self.settings.get("prefix", PREFIX)
 
     def ns(self, key, fb=""):
         v = self._ns.get(key, fb)
@@ -1030,6 +1036,9 @@ class MainBot(ZaloAPI):
         if message_text.strip().isdigit():
             if handle_skin_choice(message_text.strip(), message_object, thread_id, thread_type, author_id, self):
                 return
+            if author_id in scl_user_states:
+                scl_handle_message(message_text, message_object, thread_id, thread_type, author_id, self)
+                return
 
         prefix = self.settings.get("prefix", PREFIX)
         is_admin = check_is_admin(author_id)
@@ -1050,10 +1059,7 @@ class MainBot(ZaloAPI):
                 return
 
         specials = {
-            prefix + "bot": self._handle_botonoff_cmd,
             prefix + "notify": self._handle_notify_cmd,
-            prefix + "ns": self._handle_ns_cmd,
-            prefix + "mute": self._handle_mute_cmd,
             prefix + "approve": self._handle_approve_cmd,
             prefix + "kick": self._handle_kick_cmd,
             prefix + "warn": self._handle_warn_cmd,

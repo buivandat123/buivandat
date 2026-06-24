@@ -107,5 +107,5 @@ PREFIX
             )
         return
 
-def LIGHT():
+def Kryzis():
     return {'prefix': handle_prefix}
