@@ -12,7 +12,8 @@ import os
 import pytz
 import signal
 import subprocess
-import sys
+import io
+from PIL import Image, ImageDraw, ImageFont
 from zlapi.models import *
 import sys
 
@@ -23,6 +24,7 @@ import sys
 CONFIG_FILE = "config.json"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BOT_PID_DIR = os.path.join(BASE_DIR, "data", "bot_pids")
+BOT_SCRIPT_DIR = os.path.join(BASE_DIR, "data", "bot_scripts")
 
 logging.basicConfig(level=logging.INFO, filename='bot_manager.log', encoding='utf-8')
 
@@ -42,6 +44,99 @@ except:
     SECRET_KEY = ""
 
 os.makedirs(BOT_PID_DIR, exist_ok=True)
+os.makedirs(BOT_SCRIPT_DIR, exist_ok=True)
+
+# ============================================================
+# CANVAS
+# ============================================================
+
+def draw_bot_list(bots, author_name):
+    W, H = 800, 400 + len(bots) * 60
+    if H < 500:
+        H = 500
+    
+    BG = (10, 14, 30)
+    CARD = (20, 24, 50)
+    BORDER = (60, 70, 120)
+    TEXT = (230, 235, 250)
+    SUB = (160, 170, 200)
+    GREEN = (30, 200, 100)
+    RED = (230, 60, 80)
+    GOLD = (255, 200, 50)
+    BLUE = (50, 150, 255)
+    
+    img = Image.new("RGB", (W, H), BG)
+    draw = ImageDraw.Draw(img)
+    
+    draw.rectangle([0, 0, W, 80], fill=CARD)
+    draw.text((30, 20), f"📋 QUẢN LÝ BOT", font=Font(28, bold=True), fill=GOLD)
+    draw.text((30, 55), f"👤 {author_name}  •  Tổng: {len(bots)} bot", font=Font(16), fill=SUB)
+    draw.line([(0, 80), (W, 80)], fill=BORDER, width=2)
+    
+    if not bots:
+        draw.text((W//2, H//2), "Chưa có bot nào!", font=Font(24), fill=SUB, anchor="mm")
+    else:
+        y = 100
+        for i, bot in enumerate(bots, 1):
+            x1, y1 = 20, y
+            x2, y2 = W - 20, y + 55
+            draw.rounded_rectangle([x1, y1, x2, y2], radius=10, fill=CARD)
+            draw.rounded_rectangle([x1, y1, x2, y2], radius=10, outline=BORDER, width=1)
+            
+            draw.text((40, y + 15), f"{i:02d}", font=Font(18, bold=True), fill=BLUE)
+            status_icon = "🟢" if bot.get("status") else "🔴"
+            running_icon = "✅" if bot.get("is_active") else "❌"
+            draw.text((90, y + 15), f"{status_icon}{running_icon}", font=Font(16), fill=SUB)
+            
+            name = bot.get('username', 'Unknown')[:20]
+            draw.text((140, y + 12), name, font=Font(20, bold=True), fill=TEXT)
+            
+            prefix = bot.get('prefix', '?')
+            draw.text((140, y + 35), f"Prefix: {prefix}", font=Font(13), fill=SUB)
+            
+            het_han = bot.get('het_han', 'Vĩnh viễn')
+            draw.text((W - 150, y + 12), f"📅 {het_han}", font=Font(13), fill=SUB)
+            
+            bot_id = str(bot.get('author_id', ''))[:8]
+            draw.text((W - 150, y + 35), f"🆔 {bot_id}...", font=Font(12), fill=SUB)
+            
+            y += 60
+    
+    draw.line([(0, H - 30), (W, H - 30)], fill=BORDER, width=1)
+    draw.text((30, H - 25), f"⚡ {len(bots)} bot", font=Font(12), fill=SUB)
+    draw.text((W - 30, H - 25), "Kryzis Bot", font=Font(12), fill=SUB, anchor="ra")
+    
+    buf = io.BytesIO()
+    img.save(buf, "PNG", optimize=True)
+    return buf.getvalue()
+
+def Font(size, bold=False):
+    try:
+        paths = ["/system/fonts/Roboto-Regular.ttf", "/system/fonts/DroidSans.ttf"]
+        if bold:
+            paths = ["/system/fonts/Roboto-Bold.ttf", "/system/fonts/DroidSans-Bold.ttf"]
+        for p in paths:
+            if os.path.exists(p):
+                return ImageFont.truetype(p, size)
+    except:
+        pass
+    return ImageFont.load_default()
+
+def send_image(client, img_bytes, thread_id, thread_type, caption=""):
+    try:
+        tmp = f"/tmp/canvas_{int(time.time())}.png"
+        with open(tmp, "wb") as f:
+            f.write(img_bytes)
+        result = client.sendLocalImage(tmp, thread_id=thread_id, thread_type=thread_type,
+                              message=Message(text=caption) if caption else None,
+                              ttl=60000)
+        try:
+            os.remove(tmp)
+        except:
+            pass
+        return result
+    except:
+        return None
 
 # ============================================================
 # STYLE
@@ -122,44 +217,16 @@ def get_bot_by_index(index):
         return bots[index - 1]
     return None
 
-def save_bot_pid(bot_id, pid):
-    pid_file = os.path.join(BOT_PID_DIR, f"{bot_id}.pid")
-    with open(pid_file, 'w') as f:
-        f.write(str(pid))
-
-def get_bot_pid(bot_id):
-    pid_file = os.path.join(BOT_PID_DIR, f"{bot_id}.pid")
-    if os.path.exists(pid_file):
-        with open(pid_file, 'r') as f:
-            return int(f.read())
-    return None
-
-def remove_bot_pid(bot_id):
-    pid_file = os.path.join(BOT_PID_DIR, f"{bot_id}.pid")
-    if os.path.exists(pid_file):
-        os.remove(pid_file)
-
-def kill_bot_process(bot_id):
-    pid = get_bot_pid(bot_id)
-    if pid:
-        try:
-            os.kill(pid, signal.SIGTERM)
-            time.sleep(1)
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except:
-                pass
-            remove_bot_pid(bot_id)
-            return True
-        except:
-            pass
+def delete_bot_script(bot_id):
+    script_path = os.path.join(BOT_SCRIPT_DIR, f"bot_{bot_id}.py")
+    if os.path.exists(script_path):
+        os.remove(script_path)
+        return True
     return False
 
 # ============================================================
-# CHẠY BOT TRONG THREAD + LƯU PID
+# CHẠY BOT SONG SONG (THREAD)
 # ============================================================
-
-bot_threads = {}
 
 def start_bot_thread(target_bot, client, message_object, thread_id, thread_type):
     try:
@@ -181,10 +248,6 @@ def start_bot_thread(target_bot, client, message_object, thread_id, thread_type)
                    "❌ Bot thiếu IMEI hoặc Cookies!", sty_err)
             return False
         
-        # Kill process cũ nếu có
-        kill_bot_process(bot_id)
-        time.sleep(0.5)
-        
         def run_bot():
             try:
                 bot = MainBot(
@@ -195,22 +258,12 @@ def start_bot_thread(target_bot, client, message_object, thread_id, thread_type)
                 )
                 bot.settings = {"prefix": bot_prefix}
                 bot._bot_enabled = True
-                
-                # Lưu PID của thread
-                import os
-                save_bot_pid(bot_id, os.getpid())
-                
                 bot.listen()
             except Exception as e:
                 print(f"[Bot] Lỗi: {e}")
-            finally:
-                if bot_id in bot_threads:
-                    del bot_threads[bot_id]
-                remove_bot_pid(bot_id)
         
         thread = threading.Thread(target=run_bot, daemon=True)
         thread.start()
-        bot_threads[bot_id] = thread
         
         _reply(client, message_object, thread_id, thread_type,
                f"✅ Bot {bot_name} đã chạy!", sty_ok)
@@ -234,10 +287,10 @@ def handle_mybot_command(message, message_object, thread_id, thread_type, author
 
 .mybot help       - Trợ giúp
 .mybot create     - Tạo bot mới
-.mybot list       - Danh sách bot
+.mybot list       - Danh sách bot (ảnh)
 .mybot info       - Thông tin bot
 .mybot active     - Kích hoạt bot (admin)
-.mybot shutdown   - Tắt bot (admin)
+.mybot shutdown   - Tắt bot (xóa local) (admin)
 .mybot restart    - Khởi động lại bot (admin)
 .mybot prefix     - Đổi prefix
 .mybot rename     - Đổi tên bot
@@ -289,33 +342,16 @@ def handle_help_command(message, message_object, thread_id, thread_type, author_
     if len(parts) >= 3:
         cmd = parts[2].lower()
         help_texts = {
-            "create": """.mybot create [prefix] [imei] [cookies]
-📌 Tạo bot mới
-💡 Ví dụ: .mybot create [.] [857b9c28-...] [{"cookie":"value"}]""",
-            "active": """.mybot active [index]
-📌 Kích hoạt bot (cần admin)
-💡 Ví dụ: .mybot active 1""",
-            "shutdown": """.mybot shutdown [index]
-📌 Tắt bot (cần admin)
-💡 Ví dụ: .mybot shutdown 1""",
-            "restart": """.mybot restart [index]
-📌 Khởi động lại bot (cần admin)
-💡 Ví dụ: .mybot restart 1""",
-            "prefix": """.mybot prefix [new_prefix]
-📌 Đổi prefix của bot
-💡 Ví dụ: .mybot prefix !""",
-            "rename": """.mybot rename [index] [tên mới]
-📌 Đổi tên bot
-💡 Ví dụ: .mybot rename 1 BotXịn""",
-            "lock": """.mybot lock [index]
-📌 Khóa bot (cần admin)
-💡 Ví dụ: .mybot lock 1""",
-            "unlock": """.mybot unlock [index]
-📌 Mở khóa bot (cần admin)
-💡 Ví dụ: .mybot unlock 1""",
-            "del": """.mybot del [index]
-📌 Xóa bot (cần admin)
-💡 Ví dụ: .mybot del 1"""
+            "create": """.mybot create [prefix] [imei] [cookies]""",
+            "list": """.mybot list - Xem danh sách (ảnh)""",
+            "active": """.mybot active [index] - Kích hoạt bot""",
+            "shutdown": """.mybot shutdown [index] - Tắt bot (xóa local)""",
+            "restart": """.mybot restart [index] - Khởi động lại""",
+            "prefix": """.mybot prefix [new_prefix] - Đổi prefix""",
+            "rename": """.mybot rename [index] [tên mới]""",
+            "lock": """.mybot lock [index] - Khóa bot""",
+            "unlock": """.mybot unlock [index] - Mở khóa bot""",
+            "del": """.mybot del [index] - Xóa bot"""
         }
         text = help_texts.get(cmd, f"❌ Không có hướng dẫn cho lệnh {cmd}")
         _reply(client, message_object, thread_id, thread_type, text, sty_info, ttl=60000)
@@ -327,19 +363,17 @@ def handle_help_command(message, message_object, thread_id, thread_type, author_
 ⚡ LỆNH CƠ BẢN:
 .mybot info       - Xem thông tin bot
 .mybot prefix [p] - Đổi prefix
-.mybot list       - Danh sách bot
+.mybot list       - Danh sách bot (ảnh)
 .mybot rename [i] [tên] - Đổi tên bot
 
 ⚡ LỆNH ADMIN:
 .mybot active [i] - Kích hoạt bot
-.mybot shutdown [i] - Tắt bot
+.mybot shutdown [i] - Tắt bot (xóa local)
 .mybot restart [i] - Khởi động lại
 .mybot lock [i]   - Khóa bot
 .mybot unlock [i] - Mở khóa bot
 .mybot del [i]    - Xóa bot
-.mybot manager    - Quản lý
-
-💡 .mybot help [lệnh] - Xem chi tiết""", sty_info, ttl=60000)
+.mybot manager    - Quản lý""", sty_info, ttl=60000)
 
 def handle_create_command(message, message_object, thread_id, thread_type, author_id, client):
     source_name = get_user_name_by_id(client, author_id)
@@ -354,14 +388,7 @@ def handle_create_command(message, message_object, thread_id, thread_type, autho
     
     if not match:
         _reply(client, message_object, thread_id, thread_type,
-               f"""📋 TẠO BOT
-
-.mybot create [prefix] [imei] [cookies]
-
-💡 Ví dụ:
-.mybot create [.] [857b9c28-...] [{{"cookie":"value"}}]
-
-📌 API_KEY và SECRET_KEY lấy từ asset/config.py""", sty_info, ttl=60000)
+               f"📋 .mybot create [prefix] [imei] [cookies]\n💡 .mybot create [.] [857b9c28-...] [{{\"cookie\":\"value\"}}]", sty_info, ttl=60000)
         return
     
     bot_prefix, imei, raw_cookies = match.groups()
@@ -405,31 +432,23 @@ def handle_create_command(message, message_object, thread_id, thread_type, autho
     _reply(client, message_object, thread_id, thread_type,
            f"""✅ TẠO BOT THÀNH CÔNG
 
-👤 Tên: {source_name}
-🆔 ID: {author_id}
+👤 {source_name} | 🆔 {author_id}
 🚀 Prefix: {bot_prefix or 'không có'}
-📅 Tạo: {now.strftime('%d/%m/%Y')}
-⏰ Hết hạn: Vĩnh viễn
+📅 {now.strftime('%d/%m/%Y')} | ⏰ Vĩnh viễn
 
-💡 Dùng .mybot active {len(get_all_bots())} để chạy bot!""", sty_ok)
+💡 .mybot active {len(get_all_bots())} để chạy!""", sty_ok)
 
 def handle_list_bots_command(message, message_object, thread_id, thread_type, author_id, client):
-    bots = get_all_bots()
-    if not bots:
+    try:
+        bots = get_all_bots()
+        author_name = get_user_name_by_id(client, author_id)
+        
+        img_bytes = draw_bot_list(bots, author_name)
+        send_image(client, img_bytes, thread_id, thread_type)
+        
+    except Exception as e:
         _reply(client, message_object, thread_id, thread_type,
-               "📋 Chưa có bot nào!", sty_info)
-        return
-    
-    msg = "📋 DANH SÁCH BOT\n"
-    for i, bot in enumerate(bots, 1):
-        status = "✅" if bot.get("status") else "❌"
-        running = "🟢" if bot.get("is_active") else "🔴"
-        prefix = bot.get('prefix', '?')
-        name = bot.get('username', 'Unknown')
-        het_han = bot.get('het_han', 'N/A')
-        msg += f"{i}. {status} {running} {name} | {prefix} | {het_han}\n"
-    
-    _reply(client, message_object, thread_id, thread_type, msg, sty_info, ttl=60000)
+               f"❌ Lỗi: {str(e)[:80]}", sty_err)
 
 def handle_bot_info_command(message, message_object, thread_id, thread_type, author_id, client):
     config = load_config()
@@ -447,15 +466,12 @@ def handle_bot_info_command(message, message_object, thread_id, thread_type, aut
     _reply(client, message_object, thread_id, thread_type,
            f"""📋 THÔNG TIN BOT
 
-👤 Tên: {source_bot.get('username', 'Unknown')}
-🆔 ID: {source_bot.get('author_id')}
-📊 Trạng thái: {'✅ Đang hoạt động' if source_bot.get('status') else '❌ Tạm dừng'}
-🟢 Đang chạy: {'✅' if source_bot.get('is_active') else '❌'}
-📅 Kích hoạt: {source_bot.get('kich_hoat', 'N/A')}
-⏰ Hết hạn: {source_bot.get('het_han', 'Vĩnh viễn')}
-🚀 Prefix: {source_bot.get('prefix', 'Không có')}
-
-💡 .mybot prefix [new] - Đổi prefix""", sty_info, ttl=60000)
+👤 {source_bot.get('username', 'Unknown')}
+🆔 {source_bot.get('author_id')}
+📊 {'✅ Đang hoạt động' if source_bot.get('status') else '❌ Tạm dừng'}
+📅 {source_bot.get('kich_hoat', 'N/A')}
+⏰ {source_bot.get('het_han', 'Vĩnh viễn')}
+🚀 {source_bot.get('prefix', 'Không có')}""", sty_info, ttl=60000)
 
 def handle_active_command(message, message_object, thread_id, thread_type, author_id, client):
     if not is_admin(author_id, client):
@@ -466,11 +482,7 @@ def handle_active_command(message, message_object, thread_id, thread_type, autho
     parts = message.split()
     if len(parts) < 3:
         _reply(client, message_object, thread_id, thread_type,
-               f"""📋 ACTIVE BOT
-
-.mybot active [index]
-
-💡 Ví dụ: .mybot active 1""", sty_info, ttl=60000)
+               f"📋 .mybot active [index]\n💡 .mybot active 1", sty_info, ttl=60000)
         return
     
     try:
@@ -488,12 +500,7 @@ def handle_active_command(message, message_object, thread_id, thread_type, autho
         save_config(load_config())
         
         _reply(client, message_object, thread_id, thread_type,
-               f"""✅ ACTIVE BOT THÀNH CÔNG
-
-👤 Bot: {target_name}
-⏰ Hết hạn: {target_bot.get('het_han', 'Vĩnh viễn')}
-
-⏳ Đang khởi động bot...""", sty_ok)
+               f"✅ ACTIVE BOT THÀNH CÔNG\n👤 {target_name}\n⏰ {target_bot.get('het_han', 'Vĩnh viễn')}", sty_ok)
         
         start_bot_thread(target_bot, client, message_object, thread_id, thread_type)
         
@@ -524,25 +531,21 @@ def handle_shutdown_command(message, message_object, thread_id, thread_type, aut
         bot_name = target_bot.get('username', 'Unknown')
         bot_id = target_bot.get('author_id')
         
-        # Kill process (dùng PID của thread)
-        if kill_bot_process(bot_id):
-            target_bot["status"] = False
-            target_bot["is_active"] = False
-            save_config(load_config())
-            
-            _reply(client, message_object, thread_id, thread_type,
-                   f"""🛑 SHUTDOWN BOT THÀNH CÔNG
+        delete_bot_script(bot_id)
+        remove_bot_pid(bot_id)
+        
+        target_bot["status"] = False
+        target_bot["is_active"] = False
+        save_config(load_config())
+        
+        _reply(client, message_object, thread_id, thread_type,
+               f"""🛑 SHUTDOWN BOT THÀNH CÔNG
 
 👤 Bot: {bot_name}
 📊 Trạng thái: Đã tắt
+🗑️ Đã xóa local bot!
 
 💡 Dùng .mybot active {index+1} để bật lại""", sty_warn)
-        else:
-            _reply(client, message_object, thread_id, thread_type,
-                   f"⚠️ Bot {bot_name} không đang chạy!", sty_warn)
-            target_bot["status"] = False
-            target_bot["is_active"] = False
-            save_config(load_config())
         
     except Exception as e:
         _reply(client, message_object, thread_id, thread_type,
@@ -571,20 +574,15 @@ def handle_restart_command(message, message_object, thread_id, thread_type, auth
         bot_name = target_bot.get('username', 'Unknown')
         bot_id = target_bot.get('author_id')
         
-        # Kill process cũ
-        kill_bot_process(bot_id)
-        time.sleep(1)
+        delete_bot_script(bot_id)
+        remove_bot_pid(bot_id)
         
-        # Cập nhật trạng thái
         target_bot["status"] = True
         target_bot["is_active"] = True
         save_config(load_config())
         
         _reply(client, message_object, thread_id, thread_type,
-               f"""🔄 RESTART BOT THÀNH CÔNG
-
-👤 Bot: {bot_name}
-📊 Trạng thái: Đang khởi động lại...""", sty_ok)
+               f"🔄 RESTART BOT THÀNH CÔNG\n👤 {bot_name}", sty_ok)
         
         start_bot_thread(target_bot, client, message_object, thread_id, thread_type)
         
@@ -622,18 +620,13 @@ def handle_change_prefix_command(message, message_object, thread_id, thread_type
     save_config(config)
     
     _reply(client, message_object, thread_id, thread_type,
-           f"""✅ ĐỔI PREFIX THÀNH CÔNG
-
-📌 Cũ: {old_prefix}
-📌 Mới: {new_prefix}
-
-💡 Dùng: {new_prefix}help để xem lệnh""", sty_ok)
+           f"✅ ĐỔI PREFIX THÀNH CÔNG\n📌 Cũ: {old_prefix}\n📌 Mới: {new_prefix}", sty_ok)
 
 def handle_rename_command(message, message_object, thread_id, thread_type, author_id, client):
     parts = message.split(maxsplit=3)
     if len(parts) < 4:
         _reply(client, message_object, thread_id, thread_type,
-               f"📋 .mybot rename [index] [tên mới]\n💡 Ví dụ: .mybot rename 1 BotXịn", sty_info, ttl=60000)
+               f"📋 .mybot rename [index] [tên mới]\n💡 .mybot rename 1 BotXịn", sty_info, ttl=60000)
         return
     
     try:
@@ -658,10 +651,7 @@ def handle_rename_command(message, message_object, thread_id, thread_type, autho
         save_config(config)
         
         _reply(client, message_object, thread_id, thread_type,
-               f"""✅ ĐỔI TÊN BOT THÀNH CÔNG
-
-📌 Cũ: {old_name}
-📌 Mới: {new_name}""", sty_ok)
+               f"✅ ĐỔI TÊN BOT THÀNH CÔNG\n📌 Cũ: {old_name}\n📌 Mới: {new_name}", sty_ok)
         
     except Exception as e:
         _reply(client, message_object, thread_id, thread_type,
@@ -743,8 +733,8 @@ def handle_del_command(message, message_object, thread_id, thread_type, author_i
                    "🚦 Không tìm thấy bot!", sty_warn)
             return
         
-        # Kill process trước khi xóa
-        kill_bot_process(target_bot.get('author_id'))
+        delete_bot_script(target_bot.get('author_id'))
+        remove_bot_pid(target_bot.get('author_id'))
         
         config = load_config()
         config["data"] = [bot for bot in config.get("data", []) if bot.get("author_id") != target_bot["author_id"]]
@@ -759,22 +749,17 @@ def handle_manager_command(message, message_object, thread_id, thread_type, auth
     _reply(client, message_object, thread_id, thread_type,
            f"""👮 QUẢN TRỊ BOT
 
-📋 DANH SÁCH:
-.mybot list       - Xem danh sách bot
+📋 .mybot list       - Danh sách bot (ảnh)
+⚙️ .mybot active [i] - Kích hoạt bot
+🛑 .mybot shutdown [i] - Tắt bot (xóa local)
+🔄 .mybot restart [i] - Khởi động lại
+🔒 .mybot lock [i]   - Khóa bot
+🔓 .mybot unlock [i] - Mở khóa bot
+🗑️ .mybot del [i]    - Xóa bot
+📝 .mybot prefix [i] [new] - Đổi prefix (admin)
+📝 .mybot rename [i] [tên] - Đổi tên bot
 
-⚙️ QUẢN LÝ:
-.mybot active [i] - Kích hoạt bot
-.mybot shutdown [i] - Tắt bot
-.mybot restart [i] - Khởi động lại
-.mybot lock [i]   - Khóa bot
-.mybot unlock [i] - Mở khóa bot
-.mybot del [i]    - Xóa bot
-
-📝 CÀI ĐẶT:
-.mybot prefix [i] [new] - Đổi prefix (admin)
-.mybot rename [i] [tên] - Đổi tên bot
-
-💡 Ví dụ: .mybot active 1""", sty_info, ttl=60000)
+💡 .mybot active 1""", sty_info, ttl=60000)
 
 # ============================================================
 # LOAD
