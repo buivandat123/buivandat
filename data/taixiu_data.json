@@ -1,0 +1,36 @@
+{
+    "696983558841863982": {
+        "balance": 0,
+        "total_bet": 1100,
+        "total_win": 0,
+        "total_lose": 1100,
+        "streak": -1,
+        "max_streak": 0,
+        "last_daily": 1782302574.673539,
+        "games": [
+            {
+                "time": "19:06 24/06",
+                "bet": 1100,
+                "choice": "TÀI",
+                "result": "XỈU",
+                "total": 7,
+                "dice": [
+                    1,
+                    1,
+                    5
+                ],
+                "win": false
+            }
+        ]
+    },
+    "4351770632640459494": {
+        "balance": 1100,
+        "total_bet": 0,
+        "total_win": 0,
+        "total_lose": 0,
+        "streak": 0,
+        "max_streak": 0,
+        "last_daily": 1782303843.0779123,
+        "games": []
+    }
+}
