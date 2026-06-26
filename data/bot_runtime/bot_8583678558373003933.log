@@ -1,0 +1,29 @@
+WARNING:root:promt.json không thấy, dùng mặc định
+WARNING:root:promt.json không tìm thấy, sử dụng cài đặt mặc định
+[SLEEP] 🟢 Đã khởi động, sẽ ngủ sau 5 phút không hoạt động
+[Bot] Đang khởi động bot 84b2fd2b-4db7-439f-97ca-8a05b205671d-a16ddaab909d2cf27fce353f26dd2ff2...
+[Bot] Prefix: <
+[48;2;203;166;247m [38;2;17;17;27mDEBUG [0m [37mLogging in None...
+[48;2;166;227;161m [38;2;17;17;27mLOGIN [0m [37mLogin of 84813919768 successful.
+[41m [30mERROR [0m [37mKhông thể load được lệnh 'fkbill' trong modules: No module named 'pyzbar'
+[42m [30mSUCCESS [0m [37mĐã load thành công 70 lệnh trong modules
+[43m [30mWARN  [0m [37mKhông thể load được 7 lệnh trong modules: canvas, fkbill, allan, autodown, qr_hook, login_hook, client
+[42m [30mSUCCESS [0m [37mĐã load thành công 2 lệnh trong modules/noprefix
+[44m [30mINFO  [0m [37m🛡 Prefix hiện tại của bot là '>'
+[42m [30mSUCCESS [0m [37mKhông có lệnh start with nào.
+[44m [30mINFO  [0m [37m✅ [Vandat Bot] UID: 703256385735795118 | Prefix: >
+[Bot] Bot đã sẵn sàng, bắt đầu listen...
+[48;2;203;166;247m [38;2;17;17;27mDEBUG [0m [37mListening...
+[48;2;250;179;135m [38;2;17;17;27mWARN  [0m [37mAnother connection is opened, closing this one
+[Bot] Bot đã kết thúc
+Exception ignored on threading shutdown:
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/threading.py", line 1537, in _shutdown
+    atexit_call()
+  File "/data/data/com.termux/files/usr/lib/python3.13/threading.py", line 1508, in <lambda>
+    _threading_atexits.append(lambda: func(*arg, **kwargs))
+  File "/data/data/com.termux/files/usr/lib/python3.13/concurrent/futures/thread.py", line 31, in _python_exit
+    t.join()
+  File "/data/data/com.termux/files/usr/lib/python3.13/threading.py", line 1095, in join
+    self._handle.join(timeout)
+KeyboardInterrupt: 

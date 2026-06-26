@@ -1,0 +1,207 @@
+<!-- app/templates/admin/dashboard.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold"><i class="fas fa-robot text-accent"></i> Quản lý Bot</h2>
+            <p class="text-secondary">Quản lý tất cả bot trong hệ thống</p>
+            <hr class="border-secondary opacity-25">
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span class="stat-icon">📦</span>
+                <h5>Tổng bot</h5>
+                <h2 id="total-bots">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span class="stat-icon">🟢</span>
+                <h5>Đang chạy</h5>
+                <h2 id="running-bots">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span class="stat-icon">✅</span>
+                <h5>Đã duyệt</h5>
+                <h2 id="approved-bots">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span class="stat-icon">⏳</span>
+                <h5>Chờ duyệt</h5>
+                <h2 id="pending-bots">0</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tên bot</th>
+                        <th>Chủ sở hữu</th>
+                        <th>Prefix</th>
+                        <th>Trạng thái</th>
+                        <th>Duyệt</th>
+                        <th>PID</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="bot-list">
+                    <tr>
+                        <td colspan="8" class="text-center text-secondary py-5">
+                            <div class="loading-spinner mx-auto mb-3"></div>
+                            Đang tải danh sách bot...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadBots() {
+    try {
+        const resp = await fetch('/admin/api/bots');
+        const data = await resp.json();
+        if (data.ok) {
+            const bots = data.bots;
+            let total=0, running=0, approved=0, pending=0;
+            let html = '';
+            bots.forEach((bot, i) => {
+                if (bot.type === 'main') return;
+                const isApproved = bot.approved || bot.status;
+                const isRunning = bot.is_running || false;
+                const status = isRunning ? '🟢 Đang chạy' : '🔴 Đã tắt';
+                const statusClass = isRunning ? 'status-on' : 'status-off';
+                const approveBadge = isApproved 
+                    ? '<span class="badge badge-success">✅ Đã duyệt</span>' 
+                    : '<span class="badge badge-warning">⏳ Chờ duyệt</span>';
+                const pid = bot.is_running ? `<code class="text-muted">${bot.pid || '?'}</code>` : '-';
+                
+                if (isApproved) approved++; else pending++;
+                if (isRunning) running++;
+                total++;
+                
+                html += `
+                    <tr>
+                        <td><span class="text-muted">${i+1}</span></td>
+                        <td><strong>${bot.username || 'Unknown'}</strong></td>
+                        <td><code class="text-muted" style="font-size:0.75rem;">${bot.clientBotId || bot.botIntId || 'N/A'}</code></td>
+                        <td><code class="text-accent">${bot.prefix || '?'}</code></td>
+                        <td class="${statusClass}">${status}</td>
+                        <td>${approveBadge}</td>
+                        <td>${pid}</td>
+                        <td>
+                            ${!isApproved ? `<button class="btn-action btn-approve" onclick="botAction('${bot.botIntId || bot.imei}','approve')"><i class="fas fa-check"></i> Duyệt</button>` : ''}
+                            ${!isRunning ? `<button class="btn-action btn-start" onclick="botAction('${bot.botIntId || bot.imei}','start')"><i class="fas fa-play"></i></button>` : ''}
+                            ${isRunning ? `<button class="btn-action btn-stop" onclick="botAction('${bot.botIntId || bot.imei}','stop')"><i class="fas fa-stop"></i></button>` : ''}
+                            <button class="btn-action btn-restart" onclick="botAction('${bot.botIntId || bot.imei}','restart')"><i class="fas fa-sync"></i></button>
+                            <button class="btn-action btn-delete" onclick="deleteBot('${bot.botIntId || bot.imei}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('bot-list').innerHTML = html;
+            document.getElementById('total-bots').textContent = total;
+            document.getElementById('running-bots').textContent = running;
+            document.getElementById('approved-bots').textContent = approved;
+            document.getElementById('pending-bots').textContent = pending;
+        }
+    } catch(e) {
+        document.getElementById('bot-list').innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x d-block mb-2"></i>
+                    Lỗi tải dữ liệu
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function botAction(id, action) {
+    const names = {approve: 'duyệt', start: 'khởi động', stop: 'dừng', restart: 'khởi động lại'};
+    if(!confirm(`Xác nhận ${names[action] || action} bot này?`)) return;
+    
+    try {
+        const resp = await fetch('/admin/api/bot/action', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({bot_id:id, action:action})
+        });
+        const data = await resp.json();
+        if(data.ok) {
+            showToast(data.message || '✅ Thành công!', 'success');
+            loadBots();
+        } else {
+            showToast('❌ Lỗi: '+data.error, 'error');
+        }
+    } catch(e) {
+        showToast('❌ Lỗi kết nối', 'error');
+    }
+}
+
+async function deleteBot(id) {
+    if(!confirm('⚠️ Xóa bot này? Không thể hoàn tác!')) return;
+    
+    try {
+        const resp = await fetch('/admin/api/bot/delete', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({bot_id:id})
+        });
+        const data = await resp.json();
+        if(data.ok) {
+            showToast('🗑️ Đã xóa bot!', 'success');
+            loadBots();
+        } else {
+            showToast('❌ Lỗi: '+data.error, 'error');
+        }
+    } catch(e) {
+        showToast('❌ Lỗi kết nối', 'error');
+    }
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container') || (() => {
+        const el = document.createElement('div');
+        el.id = 'toast-container';
+        el.className = 'toast-container';
+        document.body.appendChild(el);
+        return el;
+    })();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    const icons = {success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle'};
+    toast.innerHTML = `
+        <i class="fas ${icons[type] || icons.info}"></i>
+        <span>${message}</span>
+    `;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+loadBots();
+setInterval(loadBots, 10000);
+</script>
+{% endblock %}

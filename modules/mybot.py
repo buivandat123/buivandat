@@ -6,25 +6,94 @@ import time
 import random
 import re
 import threading
+import subprocess
+import socket
+import importlib
 from datetime import datetime, timedelta
-from zlapi.models import Message, ThreadType, Mention
-import pytz
+from zlapi.models import Message, ThreadType, MultiMsgStyle, MessageStyle
+from zlapi import ZaloAPI
 
 des = {
     'version': "2.0.0",
-    'credits': "T Q D",
-    'description': "Quản lý hệ thống bot đa người dùng",
+    'credits': "Kryzis",
+    'description': "Quản lý bot đa người dùng",
     'power': "Quản trị viên và thành viên"
 }
 
 PREFIX = "."
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-mainLogin = os.path.join(BASE_DIR, "asset", "config", "main_login.json")
-BOT_MANAGER_FILE = os.path.join(BASE_DIR, "asset", "config", "bot-manager-database.json")
+LOGIN_FILE = os.path.join(BASE_DIR, "asset", "config", "login.json")
+MULTIBOT_DIR = os.path.join(BASE_DIR, "asset", "config", "multibot")
+WEB_PORT = 5000
+_tunnel_url = None
+_tunnel_process = None
 
-# ============================================================
-# INIT MAIN LOGIN
-# ============================================================
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "localhost"
+
+def check_cloudflared():
+    try:
+        result = subprocess.run(["cloudflared", "--version"], capture_output=True, timeout=2)
+        return result.returncode == 0
+    except:
+        return False
+
+def get_cloudflared_path():
+    paths = [
+        "/data/data/com.termux/files/usr/bin/cloudflared",
+        "/usr/local/bin/cloudflared",
+        "/usr/bin/cloudflared",
+        "cloudflared"
+    ]
+    for path in paths:
+        try:
+            result = subprocess.run([path, "--version"], capture_output=True, timeout=2)
+            if result.returncode == 0:
+                return path
+        except:
+            continue
+    return None
+
+def start_cloudflare_tunnel():
+    global _tunnel_url, _tunnel_process
+    if _tunnel_url:
+        return _tunnel_url
+    if not check_cloudflared():
+        return None
+    cloudflared_path = get_cloudflared_path()
+    if not cloudflared_path:
+        return None
+    try:
+        _tunnel_process = subprocess.Popen(
+            [cloudflared_path, "tunnel", "--url", f"http://localhost:{WEB_PORT}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+        for line in iter(_tunnel_process.stdout.readline, ''):
+            match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
+            if match:
+                _tunnel_url = match.group(0)
+                return _tunnel_url
+        return None
+    except:
+        return None
+
+def get_public_url():
+    global _tunnel_url
+    if not _tunnel_url:
+        _tunnel_url = start_cloudflare_tunnel()
+    if _tunnel_url:
+        return _tunnel_url
+    return f"http://{get_local_ip()}:{WEB_PORT}"
 
 def ensure_dir(path):
     try:
@@ -32,107 +101,41 @@ def ensure_dir(path):
     except:
         pass
 
-def jsonLoader(filename):
-    if not os.path.exists(filename):
-        try:
-            ensure_dir(os.path.dirname(filename))
-            with open(filename, "w", encoding="utf-8") as f:
-                json.dump({}, f, ensure_ascii=False, indent=4)
-        except:
-            pass
+def json_load(path):
+    if not os.path.exists(path):
         return {}
     try:
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except:
         return {}
 
-def saveJson(filename, data):
+def json_save(path, data):
     try:
-        ensure_dir(os.path.dirname(filename))
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-    except:
-        pass
-
-def init_main_login():
-    """Tạo file main_login.json nếu chưa có hoặc bị rỗng"""
-    if not os.path.exists(mainLogin):
-        ensure_dir(os.path.dirname(mainLogin))
-        default_data = {
-            "data": [],
-            "dataBot": {}
-        }
-        saveJson(mainLogin, default_data)
-        return True
-    
-    try:
-        data = jsonLoader(mainLogin)
-        if not isinstance(data, dict):
-            data = {}
-        if "data" not in data:
-            data["data"] = []
-        if "dataBot" not in data:
-            data["dataBot"] = {}
-        saveJson(mainLogin, data)
+        ensure_dir(os.path.dirname(path))
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
         return True
     except:
         return False
 
-# Khởi tạo main_login.json
-init_main_login()
+def init_login():
+    if not os.path.exists(LOGIN_FILE):
+        json_save(LOGIN_FILE, {"data": [], "dataBot": {}})
+        return True
+    data = json_load(LOGIN_FILE)
+    if "data" not in data:
+        data["data"] = []
+    if "dataBot" not in data:
+        data["dataBot"] = {}
+    json_save(LOGIN_FILE, data)
+    return True
 
-# ============================================================
-# CONFIG HELPER
-# ============================================================
-
-def ReadLoginJson(path):
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.loads(f.read() or "[]")
-        if isinstance(data, list):
-            return data
-        elif isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
-            return data["data"]
-        return []
-    except:
-        return []
-
-def loadBotManager():
-    return jsonLoader(BOT_MANAGER_FILE) or {}
-
-def botManagerSave(cfg):
-    saveJson(BOT_MANAGER_FILE, cfg)
-
-def dataGroup(cfg):
-    dg = cfg.get("dataGroup")
-    if isinstance(dg, dict):
-        return dg
-    dg = {}
-    cfg["dataGroup"] = dg
-    return dg
-
-def ensureBotManagerData(cfg):
-    arr = cfg.get("data")
-    if isinstance(arr, list):
-        return arr
-    arr = []
-    cfg["data"] = arr
-    return arr
-
-def NormalizePath(p):
-    s = str(p or "").strip().replace("\\", "/")
-    while "//" in s:
-        s = s.replace("//", "/")
-    return s
-
-# ============================================================
-# STYLE
-# ============================================================
+init_login()
+ensure_dir(MULTIBOT_DIR)
 
 def _sty(text, color="#e8eaf6", font_size="9"):
     h = len(text.split("\n")[0]) + 1
-    from zlapi.models import MultiMsgStyle, MessageStyle
     return MultiMsgStyle([
         MessageStyle(offset=0, length=len(text), style="font", size=font_size, auto_format=False),
         MessageStyle(offset=0, length=h, style="color", color=color, auto_format=False),
@@ -148,879 +151,537 @@ def _reply(client, obj, tid, ttype, text, sty=sty_info, ttl=60000):
     msg = Message(text=text, style=sty(text))
     return client.replyMessage(msg, obj, thread_id=tid, thread_type=ttype, ttl=ttl)
 
-def SendMention(client, text, uid, thread_id, thread_type):
+def get_user_name(client, uid):
     try:
-        name = client.fetchUserInfo(uid).changed_profiles.get(str(uid), {}).get("displayName", str(uid))
+        info = client.fetchUserInfo(uid)
+        return info.changed_profiles.get(str(uid), {}).get("displayName", str(uid))
     except:
-        name = str(uid)
-    tag = f"@{name}"
-    info = json.dumps([{"pos": 0, "uid": str(uid), "len": len(tag)}])
-    msg = Message(text=f"{tag}\n{text}", mention=info)
-    client.sendMentionMessage(msg, thread_id)
+        return str(uid)
 
-# ============================================================
-# CORE FUNCTIONS
-# ============================================================
+def get_all_bots():
+    data = json_load(LOGIN_FILE) or {}
+    return data.get("data", [])
 
-def IsMainBotUser(userId):
-    dataConfig = jsonLoader(mainLogin) or {}
-    bots = dataConfig.get("data", [])
-    for b in bots:
-        if b.get("mainBot") and str(b.get("botIntId")) == str(userId):
-            return True
-    return False
-
-def GetMentionUid(data):
-    ms = getattr(data, "mentions", None) or []
-    for m in ms:
-        try:
-            uid = m.get("uid") if isinstance(m, dict) else getattr(m, "uid", None)
-            if uid:
-                return str(uid)
-        except:
-            pass
+def get_bot_by_uid(uid):
+    data = json_load(LOGIN_FILE) or {}
+    for bot in data.get("data", []):
+        if str(bot.get("botIntId")) == str(uid):
+            return bot
     return None
 
-def HasUserClientId(items, uid):
-    uid = str(uid)
-    if not isinstance(items, list):
-        return False
-    for it in items:
-        if isinstance(it, dict) and str(it.get("userClientId") or "") == uid:
-            return True
-    return False
-
-def PickBotItem(items):
-    for it in items:
-        if isinstance(it, dict) and it.get("botIntId"):
-            return it
+def get_bot_by_index(index):
+    bots = get_all_bots()
+    if 1 <= index <= len(bots):
+        return bots[index - 1]
     return None
 
-def SlugName(s):
-    import unicodedata
-    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode("ascii")
-    return re.sub(r"[^a-zA-Z0-9]", "", s).lower()
+def get_next_login_file():
+    i = 1
+    while os.path.exists(os.path.join(MULTIBOT_DIR, f"{i}-login.json")):
+        i += 1
+    return f"{i}-login.json"
 
-def ParseTimeExpression(expr):
-    s = (expr or "").strip().lower().replace(" ", "")
-    if not s:
-        return timedelta()
-    pattern = r"(\d+)(mo|min|y|w|d|h|m|s)"
-    matches = re.findall(pattern, s)
-    delta = timedelta()
-    for value, unit in matches:
-        v = int(value)
-        if unit == "y":
-            delta += timedelta(days=v * 365)
-        elif unit == "mo":
-            delta += timedelta(days=v * 30)
-        elif unit == "w":
-            delta += timedelta(weeks=v)
-        elif unit == "d":
-            delta += timedelta(days=v)
-        elif unit == "h":
-            delta += timedelta(hours=v)
-        elif unit in ("m", "min"):
-            delta += timedelta(minutes=v)
-        elif unit == "s":
-            delta += timedelta(seconds=v)
-    return delta
-
-def ExtractJsonPayload(s):
-    s = (s or "").strip()
-    m = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", s)
-    return m.group(1).strip() if m else None
-
-def GetUidFrom(data):
-    v = getattr(data, "uidFrom", None)
-    return str(v) if v is not None else None
-
-def BuildBotIndexList():
-    dataConfig = jsonLoader(mainLogin) or {}
-    mainBots = dataConfig.get("data", []) if isinstance(dataConfig.get("data", []), list) else []
-
-    accountDir = os.path.join(os.path.dirname(mainLogin), "multibot")
-    accountFiles = []
-    if os.path.isdir(accountDir):
-        for name in os.listdir(accountDir):
-            if name.endswith("-login.json"):
-                accountFiles.append(os.path.join(accountDir, name))
-
-    seen = set()
-    result = []
-
-    def AddBot(bot, src, fp):
-        if not isinstance(bot, dict):
-            return
-        botIntId = str(bot.get("botIntId") or "")
-        username = str(bot.get("username") or "")
-        imei = str(bot.get("imei") or "")
-        key = (botIntId, username, imei)
-        if key in seen:
-            return
-        seen.add(key)
-        result.append((bot, src, fp))
-
-    for bot in mainBots:
-        AddBot(bot, "MAIN", mainLogin)
-
-    for fp in accountFiles:
-        try:
-            items = ReadLoginJson(fp)
-        except:
-            continue
-        if not isinstance(items, list):
-            continue
-        bot = PickBotItem(items)
-        if bot:
-            AddBot(bot, os.path.basename(fp), fp)
-
-    def SortKey(x):
-        bot, src, fp = x
-        isMain = 1 if bot.get("mainBot") else 0
-        isFromMainDb = 1 if src == "MAIN" else 0
-        username = str(bot.get("username") or "").lower()
-        botIntId = str(bot.get("botIntId") or "")
-        return (-isMain, -isFromMainDb, username, botIntId)
-
-    result.sort(key=SortKey)
-    return result
-
-def GetOwnBotByFilePath(this):
-    cfg = loadBotManager() or {}
-    arr = cfg.get("data")
-    if not isinstance(arr, list):
-        return None, None, None
-
-    uid = str(getattr(this, "uid", "") or "").strip()
-    imei = getattr(this, "imei", "") if hasattr(this, "imei") else ""
-    botIntId = str(getattr(this, "botIntId", "") or "").strip()
-
-    fp = None
-    for it in arr:
-        if not isinstance(it, dict):
-            continue
-        dbUid = str(it.get("this.uid") or "").strip()
-        dbImei = str(it.get("this.imei") or "").strip()
-        dbBotIntId = str(it.get("this.botIntId") or "").strip()
-        if (uid and dbUid == uid) or (imei and dbImei == imei) or (botIntId and dbBotIntId == botIntId):
-            fp = NormalizePath(it.get("filePath"))
+def save_bot(bot):
+    data = json_load(LOGIN_FILE) or {}
+    bots = data.get("data", [])
+    found = False
+    for i, b in enumerate(bots):
+        if str(b.get("botIntId")) == str(bot.get("botIntId")):
+            bots[i] = bot
+            found = True
             break
+    if not found:
+        bots.append(bot)
+    data["data"] = bots
+    if "dataBot" not in data:
+        data["dataBot"] = {}
+    data["dataBot"][str(bot.get("botIntId"))] = bot.get("filePath", "")
+    json_save(LOGIN_FILE, data)
+    return True
 
-    if not fp or not os.path.exists(fp):
-        return None, fp, None
+def delete_bot_by_id(bot_id):
+    data = json_load(LOGIN_FILE) or {}
+    bots = data.get("data", [])
+    data["data"] = [b for b in bots if str(b.get("botIntId")) != str(bot_id)]
+    if "dataBot" in data:
+        data["dataBot"].pop(str(bot_id), None)
+    json_save(LOGIN_FILE, data)
+    return True
 
-    items = ReadLoginJson(fp)
-    if not isinstance(items, list) or not items:
-        return None, fp, items
+_bot_threads = {}
 
-    for it in items:
-        if isinstance(it, dict) and str(it.get("botIntId") or "") == botIntId:
-            return it, fp, items
+def load_all_commands():
+    """Load tất cả lệnh từ thư mục modules/"""
+    commands = {}
+    modules_dir = "modules"
+    
+    if not os.path.exists(modules_dir):
+        return commands
+    
+    for filename in os.listdir(modules_dir):
+        if filename.endswith('.py') and not filename.startswith('__'):
+            module_name = filename[:-3]
+            try:
+                module = importlib.import_module(f'modules.{module_name}')
+                if hasattr(module, 'Kryzis'):
+                    kryzis_func = getattr(module, 'Kryzis')
+                    if callable(kryzis_func):
+                        cmds = kryzis_func()
+                        if isinstance(cmds, dict):
+                            for cmd_name, handler in cmds.items():
+                                commands[cmd_name] = {
+                                    "name": cmd_name,
+                                    "main": handler,
+                                    "permission": 0,
+                                    "description": "",
+                                    "cooldown": 0,
+                                    "status": True,
+                                    "alias": []
+                                }
+            except Exception as e:
+                pass  # Tắt debug lỗi
+    return commands
 
-    if len(items) == 1 and isinstance(items[0], dict):
-        return items[0], fp, items
-
-    return None, fp, items
-
-def GetOwnBot(this, data, userId, threadId, thread_type):
-    uidFrom = GetUidFrom(data)
-    if not uidFrom:
-        SendMention(this, "status:null", userId, threadId, thread_type)
-        return None, None, None
-
-    dataConfig = jsonLoader(mainLogin) or {}
-    dataBot = dataConfig.get("dataBot", {}) if isinstance(dataConfig.get("dataBot", {}), dict) else {}
-    loginFile = dataBot.get(str(uidFrom))
-    if not loginFile:
-        SendMention(this, "status:null", userId, threadId, thread_type)
-        return None, None, None
-
-    loginPath = os.path.join(os.path.dirname(mainLogin), "multibot", loginFile)
-    if not os.path.exists(loginPath):
-        SendMention(this, "status:null", userId, threadId, thread_type)
-        return None, None, None
-
+def start_bot_real(bot):
+    """Chạy bot thật - dùng API_KEY và SECRET_KEY từ asset/config.py"""
     try:
-        items = ReadLoginJson(loginPath)
-    except:
-        SendMention(this, "status:null", userId, threadId, thread_type)
-        return None, None, None
+        from asset.config import API_KEY, SECRET_KEY
+        
+        bot_id = bot.get("botIntId")
+        imei = bot.get("imei")
+        session_cookies = bot.get("sessionCookies")
+        prefix = bot.get("prefix", "!")
+        username = bot.get("username")
+        
+        if not imei or not session_cookies:
+            return False, "Thiếu IMEI hoặc Cookies!"
+        
+        stop_bot_real_by_id(bot_id)
+        time.sleep(0.5)
+        
+        # Tạo bot từ zlapi với API_KEY và SECRET_KEY
+        class SimpleBot(ZaloAPI):
+            def __init__(self, imei, session_cookies, prefix):
+                self._imei = imei
+                self.imei = imei
+                self.prefix = prefix
+                self._bot_enabled = True
+                self.listening = True
+                self.uid = imei
+                self.username = username
+                self.commands = {}
+                
+                # Gọi init với API_KEY và SECRET_KEY
+                try:
+                    super().__init__(API_KEY, SECRET_KEY, imei, session_cookies)
+                except Exception as e:
+                    print(f"[SimpleBot] ⚠️ Init error: {e}")
+                    raise
+                
+                # Load commands
+                self.commands = load_all_commands()
+                print(f"[SimpleBot] 📋 Total commands: {len(self.commands)}")
+            
+            def onMessage(self, mid, author_id, message, message_object, thread_id, thread_type):
+                """XỬ LÝ TIN NHẮN TỪ ZALO"""
+                try:
+                    if message_object.msgType == "chat.sticker":
+                        return
+                    c = message_object.content
+                    if isinstance(c, dict) and "title" in c:
+                        msg_text = c["title"]
+                    elif isinstance(c, str):
+                        msg_text = c
+                    else:
+                        return
+                    
+                    if not msg_text or not msg_text.strip():
+                        return
+                    
+                    if not msg_text.startswith(self.prefix):
+                        return
+                    
+                    parts = msg_text[len(self.prefix):].strip().split()
+                    if not parts:
+                        return
+                    
+                    cmd = parts[0].lower()
+                    
+                    if cmd in self.commands:
+                        handler = self.commands[cmd]["main"]
+                        handler(msg_text, message_object, thread_id, thread_type, author_id, self)
+                    else:
+                        self.sendMessage(
+                            Message(text=f"❌ Lệnh {cmd} không tồn tại!"),
+                            thread_id, thread_type
+                        )
+                except Exception as e:
+                    print(f"[SimpleBot] ❌ Error: {e}")
+            
+            def listen(self):
+                print(f"[SimpleBot] 🤖 Bot running with prefix: {self.prefix}")
+                self.listening = True
+                try:
+                    super().listen()
+                except KeyboardInterrupt:
+                    print("\n[SimpleBot] 🛑 Stopped")
+                finally:
+                    self.listening = False
+            
+            def stopListening(self):
+                self.listening = False
+                self._bot_enabled = False
+            
+            # Hàm hỗ trợ
+            def sendMWarning(self, text, userId, threadId, type):
+                self.sendMessage(Message(text=f"⚠️ {text}"), threadId, ThreadType.GROUP if type == "group" else ThreadType.USER)
+            
+            def sendMFailed(self, text, userId, threadId, type):
+                self.sendMessage(Message(text=f"❌ {text}"), threadId, ThreadType.GROUP if type == "group" else ThreadType.USER)
+            
+            def sendMSuccess(self, text, userId, threadId, type):
+                self.sendMessage(Message(text=f"✅ {text}"), threadId, ThreadType.GROUP if type == "group" else ThreadType.USER)
+            
+            def sendMCustom(self, title, icon, text, userId, threadId, type):
+                self.sendMessage(Message(text=f"{icon} {title}: {text}"), threadId, ThreadType.GROUP if type == "group" else ThreadType.USER)
+                return None
+            
+            def sendMention(self, text, userId, threadId, type):
+                self.sendMessage(Message(text=f"@{userId} {text}"), threadId, ThreadType.GROUP if type == "group" else ThreadType.USER)
+            
+            def deleteMessage(self, *args):
+                pass
+            
+            def sendImage(self, *args, **kwargs):
+                return None
+            
+            def undoMessage(self, *args):
+                pass
+            
+            def uploadImage(self, *args):
+                return {}
+            
+            def userName(self, uid):
+                return str(uid)
+            
+            def randomInt(self):
+                return random.randint(100000, 999999)
+        
+        # Tạo bot
+        bot_instance = SimpleBot(imei, session_cookies, prefix)
+        
+        # Lưu bot
+        _bot_threads[bot_id] = {"bot": bot_instance, "username": username}
+        
+        # Cập nhật trạng thái
+        bot["status"] = True
+        bot["isActived"] = True
+        save_bot(bot)
+        
+        # Chạy bot trong thread
+        thread = threading.Thread(target=bot_instance.listen, daemon=True)
+        thread.start()
+        
+        return True, f"Bot đã chạy với {len(bot_instance.commands)} lệnh!"
+    except Exception as e:
+        print(f"[MyBot] ❌ Lỗi start bot: {e}")
+        return False, str(e)
 
-    if not HasUserClientId(items, uidFrom):
-        SendMention(this, "status:null", userId, threadId, thread_type)
-        return None, None, None
-
-    bot = PickBotItem(items)
-    if not bot:
-        SendMention(this, "status:null", userId, threadId, thread_type)
-        return None, None, None
-
-    return bot, loginPath, items
-
-def GetBotByMention(this, data, userId, threadId, thread_type):
-    uid = GetMentionUid(data)
-    if not uid:
-        return None, None, None
-    # Cho phép tất cả user có bot
-    dataConfig = jsonLoader(mainLogin) or {}
-    dataBot = dataConfig.get("dataBot", {}) if isinstance(dataConfig.get("dataBot", {}), dict) else {}
-    loginFile = dataBot.get(uid)
-    if not loginFile:
-        SendMention(this, "status:unkownUid", userId, threadId, thread_type)
-        return None, None, None
-
-    loginPath = os.path.join(os.path.dirname(mainLogin), "multibot", loginFile)
-    if not os.path.exists(loginPath):
-        SendMention(this, "status:unkownUid", userId, threadId, thread_type)
-        return None, None, None
-
-    items = ReadLoginJson(loginPath)
-    if not HasUserClientId(items, uid):
-        SendMention(this, "status:unkownUid", userId, threadId, thread_type)
-        return None, None, None
-
-    bot = PickBotItem(items)
-    if not bot:
-        SendMention(this, "status:unkownUid", userId, threadId, thread_type)
-        return None, None, None
-
-    return bot, loginPath, items
-
-def GetBotByIndexOrMention(this, data, userId, threadId, thread_type, token=None):
-    bot, filePath, items = GetBotByMention(this, data, userId, threadId, thread_type)
-    if bot:
-        return bot, filePath, items
-
-    if token and str(token).isdigit():
-        idx = int(token)
-        arr = BuildBotIndexList()
-        if idx < 1 or idx > len(arr):
-            SendMention(this, "Index out of range", userId, threadId, thread_type)
-            return None, None, None
-        bot, src, fp = arr[idx - 1]
-        if fp == mainLogin:
-            dataConfig = jsonLoader(mainLogin) or {}
-            bots = dataConfig.get("data", []) if isinstance(dataConfig.get("data", []), list) else []
-            return bot, mainLogin, bots
-        items = ReadLoginJson(fp)
-        return PickBotItem(items), fp, items
-
-    dataConfig = jsonLoader(mainLogin) or {}
-    bots = dataConfig.get("data", []) if isinstance(dataConfig.get("data", []), list) else []
-    mybot = next((b for b in bots if str(b.get("botIntId") or "") == str(userId)), None)
-    if not mybot:
-        SendMention(this, "status:null", userId, threadId, thread_type)
-        return None, None, None
-    return mybot, mainLogin, bots
-
-def UpdateExistingBotLogin(uidFrom, imei, sessionCookies):
-    dataConfig = jsonLoader(mainLogin) or {}
-    dataBot = dataConfig.get("dataBot", {})
-    if not isinstance(dataBot, dict):
-        return None, None, None
-
-    loginFile = dataBot.get(str(uidFrom))
-    if not loginFile:
-        return None, None, None
-
-    loginPath = os.path.join(os.path.dirname(mainLogin), "multibot", loginFile)
-    items = ReadLoginJson(loginPath)
-    if not isinstance(items, list) or not items:
-        return None, None, None
-
-    bot = items[0] if isinstance(items[0], dict) else None
-    if not bot:
-        return None, None, None
-
-    bot["imei"] = imei
-    bot["sessionCookies"] = sessionCookies
-
-    with open(loginPath, "w", encoding="utf-8") as f:
-        f.write(json.dumps(items, ensure_ascii=False, indent=4))
-
-    return bot, loginPath, items
-
-def SaveBotField(fp, items, bot, k, v):
-    bot[k] = v
-    with open(fp, "w", encoding="utf-8") as f:
-        f.write(json.dumps(items, ensure_ascii=False, indent=4))
-
-def DeleteBot(bot, filePath):
+def stop_bot_real_by_id(bot_id):
     try:
-        if filePath == mainLogin:
-            return False
-        if os.path.exists(filePath):
-            os.remove(filePath)
-        dataConfig = jsonLoader(mainLogin) or {}
-        dataBot = dataConfig.get("dataBot", {})
-        for k, v in list(dataBot.items()):
-            if v == os.path.basename(filePath):
-                del dataBot[k]
-        dataConfig["dataBot"] = dataBot
-        saveJson(mainLogin, dataConfig)
-        return True
+        if bot_id in _bot_threads:
+            bot = _bot_threads[bot_id].get("bot")
+            if bot and hasattr(bot, "stopListening"):
+                bot.stopListening()
+            del _bot_threads[bot_id]
+            return True
+        return False
     except:
         return False
 
-def restartABot(bot):
-    # Placeholder - actual restart logic
-    pass
-
-def shutdownABot(bot):
-    # Placeholder - actual shutdown logic
-    pass
-
-def StopBot(bot, fp, items):
-    bot["status"] = False
-    if isinstance(fp, str) and fp.endswith(".json"):
-        if fp == mainLogin:
-            dataConfig = jsonLoader(mainLogin) or {}
-            bots = dataConfig.get("data", []) if isinstance(dataConfig.get("data", []), list) else []
-            for b in bots:
-                if b.get("botIntId") == bot.get("botIntId"):
-                    b["status"] = False
-            dataConfig["data"] = bots
-            saveJson(mainLogin, dataConfig)
-        else:
-            with open(fp, "w", encoding="utf-8") as f:
-                f.write(json.dumps(items, ensure_ascii=False, indent=4))
-    shutdownABot(bot)
-
-def ActiveBot(bot, fp, items, timeExpr):
-    now = datetime.now()
-    expireDelta = ParseTimeExpression(timeExpr)
-    expireTime = now + expireDelta
-
-    bot["status"] = True
-    bot["isActived"] = True
-    bot["activedTime"] = now.strftime("%H:%M:%S-%d/%m/%Y")
-    bot["expiredTime"] = expireTime.strftime("%H:%M:%S-%d/%m/%Y")
-
-    if fp == mainLogin:
-        dataConfig = jsonLoader(mainLogin) or {}
-        bots = dataConfig.get("data", []) if isinstance(dataConfig.get("data", []), list) else []
-        for b in bots:
-            if b.get("botIntId") == bot.get("botIntId"):
-                b.update(bot)
-        dataConfig["data"] = bots
-        saveJson(mainLogin, dataConfig)
-    else:
-        with open(fp, "w", encoding="utf-8") as f:
-            f.write(json.dumps(items, ensure_ascii=False, indent=4))
-
-    restartABot(bot)
-
-# ============================================================
-# COMMAND HANDLERS (ĐÃ FIX)
-# ============================================================
-
-def BotManagerCommand(message, message_object, thread_id, thread_type, author_id, client):
+def is_bot_running(bot_id):
     try:
-        parts = (message or "").strip().split()
+        if bot_id in _bot_threads:
+            bot = _bot_threads[bot_id].get("bot")
+            if bot and hasattr(bot, "listening"):
+                return bot.listening
+        return False
+    except:
+        return False
+
+def handle_mybot(message, message_object, thread_id, thread_type, author_id, client):
+    try:
+        parts = message.strip().split()
         cmdb = f"{PREFIX}mybot"
         
-        is_main_bot = hasattr(client, 'mainBot') and client.mainBot
-        
         if len(parts) < 2:
-            if is_main_bot:
-                _reply(client, message_object, thread_id, thread_type,
-                    f"""
-1. Create applications
-{cmdb} create IMEI Session Cookies: Create with imei and cookies
-{cmdb} create qr: Create with QR Code
+            menu = f"""📋 *QUẢN LÝ BOT*
 
-2. Manager your applications:
-{cmdb} list: All bots
-{cmdb} info: Get Info
-{cmdb} restart: Restart your BOT
-{cmdb} stop: Stop your BOT
-{cmdb} prefix: Set bot prefix
-{cmdb} server: Get appServer
-{cmdb} login: Set login type
+{cmdb} create [imei] [cookies] - Tạo bot mới
+{cmdb} list                   - Danh sách bot
+{cmdb} info                   - Thông tin bot của bạn
+{cmdb} start [index] [time]   - Start bot
+{cmdb} stop [index]           - Stop bot
+{cmdb} restart [index]        - Restart bot
+{cmdb} delete [index]         - Xóa bot
+{cmdb} prefix [new]           - Đổi prefix
+{cmdb} server                 - Xem link web
 
-3. Management for main
-type {cmdb} manager.
-    """, sty_info)
-            else:
-                _reply(client, message_object, thread_id, thread_type,
-                    f"""Applications: {getattr(client, 'bot', 'Unknown')}
-{cmdb} info: Get Info
-{cmdb} restart: Restart your BOT
-{cmdb} stop: Stop your BOT
-{cmdb} prefix: Set bot prefix
-{cmdb} server: Get appServer
-{cmdb} login: Set login type
-""", sty_info)
+💡 *Time:* 1d, 5h, 30m, 7d, 30d"""
+            _reply(client, message_object, thread_id, thread_type, menu, sty_info)
             return
 
         cmd = parts[1].lower()
-        isMain = IsMainBotUser(author_id)
-        hasMention = bool(GetMentionUid(message_object))
-        token = parts[2] if len(parts) > 2 else None
-
-        # ===== FIX: Chỉ chặn delete và group =====
-        if cmd in ("delete", "group") and not is_main_bot:
-            _reply(client, message_object, thread_id, thread_type,
-                "Permission denied, only server main.Bot%", sty_err)
-            return
-
-        if cmd == "manager":
-            if not is_main_bot:
-                _reply(client, message_object, thread_id, thread_type,
-                    f"Only server can use {getattr(client, 'rawCommand', 'mybot')}..!", sty_warn)
-                return
-            manager = f"""{getattr(client, 'bot', 'Bot')} Manager [Server]
-    Set GROUP to get login status: {cmdb} group set
-    Set send login status: {cmdb} group notify
-    Delete userBot: {cmdb} delete [Target]
-    Main can target a BOT with mentions or choose index of that BOT
-"""
-            _reply(client, message_object, thread_id, thread_type, manager, sty_info)
-            return
-
-        if cmd == "prefix":
-            args = [x for x in parts[2:] if x != "|"]
-            if is_main_bot:
-                token = args[0] if (hasMention or (args and args[0].isdigit())) else None
-                newPrefix = args[1] if token and len(args) >= 2 else (args[0] if args else None)
-                if not newPrefix:
-                    _reply(client, message_object, thread_id, thread_type,
-                        "Set the prefix below the command!", sty_err)
-                    return
-
-                if token:
-                    bot, fp, items = GetBotByIndexOrMention(client, message_object, author_id, thread_id, thread_type, token)
-                    if not bot:
-                        return
-                    SaveBotField(fp, items, bot, "prefix", newPrefix)
-                    _reply(client, message_object, thread_id, thread_type,
-                        f"Updated prefix: {newPrefix}", sty_ok)
-                    return
-
-                bot, fp, items = GetOwnBotByFilePath(client)
-                if not bot:
-                    bot, fp, items = GetOwnBot(client, message_object, author_id, thread_id, thread_type)
-                if not bot:
-                    _reply(client, message_object, thread_id, thread_type,
-                        "Cannot resolve this bot", sty_err)
-                    return
-
-                SaveBotField(fp, items, bot, "prefix", newPrefix)
-                _reply(client, message_object, thread_id, thread_type,
-                    f"Updated prefix: {newPrefix}", sty_ok)
-                return
-
-            bot, fp, items = GetOwnBotByFilePath(client)
-            if not bot:
-                bot, fp, items = GetOwnBot(client, message_object, author_id, thread_id, thread_type)
-            if not bot:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Cannot resolve this bot", sty_err)
-                return
-
-            newPrefix = args[0] if args else None
-            if not newPrefix:
-                _reply(client, message_object, thread_id, thread_type,
-                    f"Usage: {cmdb} prefix [Prefix]", sty_err)
-                return
-
-            SaveBotField(fp, items, bot, "prefix", newPrefix)
-            _reply(client, message_object, thread_id, thread_type,
-                f"Updated prefix: {newPrefix}", sty_ok)
-            return
 
         if cmd == "server":
-            _reply(client, message_object, thread_id, thread_type,
-                getattr(client, 'appServer', 'Unknown'), sty_ok)
-            return
-
-        if cmd == "login":
-            if len(parts) < 3:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Set a login type: web or pc", sty_err)
-                return
-
-            loginType = (parts[2] or "").lower()
-            if loginType not in ("web", "pc"):
-                _reply(client, message_object, thread_id, thread_type,
-                    "Type support: web and pc", sty_err)
-                return
-
-            loginValue = 30 if loginType == "web" else 24
-
-            if is_main_bot:
-                token = parts[3] if len(parts) > 3 else None
-                if not token and not hasMention:
-                    _reply(client, message_object, thread_id, thread_type,
-                        "Target a bot to set login type", sty_err)
-                    return
-
-                bot, fp, items = GetBotByIndexOrMention(client, message_object, author_id, thread_id, thread_type, token)
-                if not bot:
-                    return
-                SaveBotField(fp, items, bot, "login", loginValue)
-                _reply(client, message_object, thread_id, thread_type,
-                    f"Updated login type: {loginType.upper()} for {bot.get('username')}", sty_ok)
-                return
-
-            bot, fp, items = GetOwnBotByFilePath(client)
-            if not bot:
-                bot, fp, items = GetOwnBot(client, message_object, author_id, thread_id, thread_type)
-            if not bot:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Cannot resolve this bot", sty_err)
-                return
-
-            SaveBotField(fp, items, bot, "login", loginValue)
-            _reply(client, message_object, thread_id, thread_type,
-                f"Updated login type: {loginType.upper()}", sty_ok)
-            restartABot(bot)
+            web_url = get_public_url()
+            _reply(client, message_object, thread_id, thread_type, f"🔗 {web_url}", sty_ok)
             return
 
         if cmd == "info":
-            if is_main_bot:
-                if len(parts) >= 3 or hasMention:
-                    bot, fp, _ = GetBotByIndexOrMention(client, message_object, author_id, thread_id, thread_type, token)
-                    if not bot:
-                        return
-                    if fp == mainLogin or bot.get("mainBot"):
-                        _reply(client, message_object, thread_id, thread_type,
-                            "@getServerInfo\n<response[0] main.Bot%>", sty_info)
-                        return
-                    info = f"""@getBotInfo:
-
-:name {bot.get('username', 'Unknown')}
-:userclient {bot.get('userClientId') or bot.get('clientBotId') or 'None'}
-:socketid {bot.get('botIntId') or 'None'}
-:prefix {bot.get('prefix') or 'None'}
-:expiredtime {bot.get('expiredTime') or 'None'}
-:activedtime {bot.get('activedTime') or 'None'}
-
-@status: {'True' if bot.get('status') else 'False'}"""
-                    _reply(client, message_object, thread_id, thread_type, info, sty_info)
-                    return
-                _reply(client, message_object, thread_id, thread_type,
-                    "@getServerInfo\n<response[0] main.Bot%>", sty_info)
-                return
-
-            bot, fp, _ = GetOwnBotByFilePath(client)
+            bot = get_bot_by_uid(author_id)
             if not bot:
-                bot, fp, _ = GetOwnBot(client, message_object, author_id, thread_id, thread_type)
-            if not bot:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Cannot resolve this bot", sty_err)
+                _reply(client, message_object, thread_id, thread_type, "🚦 Bạn chưa có bot!", sty_warn)
                 return
-            if fp == mainLogin or bot.get("mainBot"):
-                _reply(client, message_object, thread_id, thread_type,
-                    "@getServerInfo\n<response[0] main.Bot%>", sty_info)
-                return
-            info = f"""@getBotInfo:
-
-:name {bot.get('username', 'Unknown')}
-:userclient {bot.get('userClientId') or bot.get('clientBotId') or 'None'}
-:socketid {bot.get('botIntId') or 'None'}
-:prefix {bot.get('prefix') or 'None'}
-:expiredtime {bot.get('expiredTime') or 'None'}
-:activedtime {bot.get('activedTime') or 'None'}
-
-@status: {'True' if bot.get('status') else 'False'}"""
+            web_url = get_public_url()
+            running = is_bot_running(bot.get("botIntId"))
+            info = f"""📋 *{bot.get('username', 'Unknown')}*
+🆔 {bot.get('botIntId')}
+📊 {'✅ Đang chạy' if running else '❌ Đã dừng'}
+🚀 {bot.get('prefix', '?')}
+🔗 {web_url}
+👤 {bot.get('botAccount', 'N/A')}
+🔑 {bot.get('botPassword', 'N/A')}"""
             _reply(client, message_object, thread_id, thread_type, info, sty_info)
             return
 
-        if not is_main_bot and cmd in ("restart", "stop"):
-            bot, fp, items = GetOwnBotByFilePath(client)
-            if not fp:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Missing this filePath in basement", sty_err)
+        if cmd == "list":
+            bots = get_all_bots()
+            if not bots:
+                _reply(client, message_object, thread_id, thread_type, "📋 Chưa có bot nào!", sty_info)
                 return
-            if not bot:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Cannot resolve this bot in login file", sty_err)
-                return
-
-            if cmd == "stop":
-                StopBot(bot, fp, items)
-                _reply(client, message_object, thread_id, thread_type,
-                    "Your bot has been stopped", sty_ok)
-                return
-
-            bot["status"] = True
-            if isinstance(fp, str) and fp.endswith(".json") and fp != mainLogin:
-                with open(fp, "w", encoding="utf-8") as f:
-                    f.write(json.dumps(items, ensure_ascii=False, indent=4))
-            restartABot(bot)
-            _reply(client, message_object, thread_id, thread_type,
-                "Restarted your bot..!", sty_ok)
+            msg = "📋 *DANH SÁCH BOT*\n"
+            for i, bot in enumerate(bots, 1):
+                running = is_bot_running(bot.get("botIntId"))
+                status = "🟢" if running else "🔴"
+                msg += f"{i}. {status} *{bot.get('username', 'Unknown')}* | {bot.get('prefix', '?')}\n"
+                msg += f"   👤 {bot.get('botAccount', 'N/A')} | 🔑 {bot.get('botPassword', 'N/A')}\n"
+            _reply(client, message_object, thread_id, thread_type, msg, sty_info)
             return
 
         if cmd == "create":
-            # QR Code
-            if len(parts) > 2 and parts[2].lower() == "qr":
-                _reply(client, message_object, thread_id, thread_type,
-                    "QR Code creation...", sty_info)
-                return
-            
-            # Create bot với IMEI và Cookies
             if len(parts) < 4:
-                SendMention(client, f"Please type {cmdb} create with IMEI and Session Cookies to GET Login", author_id, thread_id, thread_type)
+                _reply(client, message_object, thread_id, thread_type,
+                    f"""📋 *TẠO BOT*
+{cmdb} create [imei] [cookies]
+💡 {cmdb} create 857b9c28-39b6-432b-a073-87be165e8692 '{{"cookie":"value"}}'""", sty_info)
                 return
             
-            uidFrom = GetUidFrom(message_object)
-            if not uidFrom:
-                SendMention(client, "status:null", author_id, thread_id, thread_type)
-                return
-
+            uidFrom = author_id
             imei = parts[2]
-            payload = ExtractJsonPayload(" ".join(parts[3:]))
-            if not payload:
-                SendMention(client, "Invalid cookies JSON", author_id, thread_id, thread_type)
+            try:
+                cookies = json.loads(" ".join(parts[3:]))
+            except:
+                _reply(client, message_object, thread_id, thread_type, "❌ Cookies không hợp lệ!", sty_err)
                 return
             
-            try:
-                sessionCookies = json.loads(payload)
-            except:
-                SendMention(client, "Invalid cookies JSON", author_id, thread_id, thread_type)
+            if get_bot_by_uid(uidFrom):
+                _reply(client, message_object, thread_id, thread_type, "🚦 Bạn đã có bot!", sty_warn)
                 return
-
-            # Kiểm tra đã có bot chưa
-            bot, _, _ = UpdateExistingBotLogin(uidFrom, imei, sessionCookies)
-            if bot:
-                SendMention(client, f"Updated IMEI & Cookies for {bot.get('username')}", author_id, thread_id, thread_type)
-                return
-
-            # Tạo bot mới
-            dataConfig = jsonLoader(mainLogin) or {}
-            dataBot = dataConfig.get("dataBot", {}) if isinstance(dataConfig.get("dataBot", {}), dict) else {}
-            username = f"{client.userName(uidFrom)}-{len(dataConfig.get('data', []))}"
-            prefixList = ["/", ".", "_", "-", ",", ">", "<", ")", "(", "~", "[", "]", ";"]
-            prefix = random.choice(prefixList)
-            botAccount = SlugName(client.userName(uidFrom))
+            
+            username = get_user_name(client, uidFrom)
+            prefix_list = ["/", ".", "_", "-", ",", ">", "<", ")", "(", "~", "!", "?"]
+            prefix = random.choice(prefix_list)
+            botAccount = username.lower().replace(" ", "")[:10] + str(random.randint(10, 99))
             botPassword = str(random.randint(100000, 999999))
-
-            newBot = {
+            
+            login_file = get_next_login_file()
+            login_path = os.path.join(MULTIBOT_DIR, login_file)
+            
+            new_bot = {
                 "username": username,
                 "login": 24,
-                "botIntId": str(author_id),
+                "botIntId": str(uidFrom),
                 "imei": imei,
                 "prefix": prefix,
-                "sessionCookies": sessionCookies,
+                "sessionCookies": cookies,
                 "clientBotId": str(uidFrom),
                 "mainBot": False,
                 "status": False,
                 "isActived": False,
+                "approved": True,
                 "botAccount": botAccount,
-                "botPassword": botPassword
+                "botPassword": botPassword,
+                "activedTime": None,
+                "expiredTime": None,
+                "filePath": login_file
             }
-
-            multibot_dir = os.path.join(os.path.dirname(mainLogin), "multibot")
-            os.makedirs(multibot_dir, exist_ok=True)
-            indexFile = 1
-            while os.path.exists(os.path.join(multibot_dir, f"{indexFile}-login.json")):
-                indexFile += 1
-
-            loginFile = f"{indexFile}-login.json"
-            loginPath = os.path.join(multibot_dir, loginFile)
-
-            with open(loginPath, "w", encoding="utf-8") as f:
-                json.dump([newBot, {"userClientId": str(uidFrom)}], f, ensure_ascii=False, indent=4)
-
-            dataBot[str(uidFrom)] = loginFile
-            dataConfig["dataBot"] = dataBot
-            saveJson(mainLogin, dataConfig)
-
-            SendMention(client, f"[{prefix}] Successful create {client.userName(uidFrom)} BOT..", author_id, thread_id, thread_type)
             
-            # Gửi thông tin login
-            try:
-                app_server = getattr(client, 'appServer', 'Unknown')
-                login_msg = f"""✅ TẠO BOT THÀNH CÔNG!
+            with open(login_path, "w", encoding="utf-8") as f:
+                json.dump([new_bot, {"userClientId": str(uidFrom)}], f, ensure_ascii=False, indent=4)
+            
+            data = json_load(LOGIN_FILE) or {}
+            if "data" not in data:
+                data["data"] = []
+            data["data"].append(new_bot)
+            if "dataBot" not in data:
+                data["dataBot"] = {}
+            data["dataBot"][str(uidFrom)] = login_file
+            json_save(LOGIN_FILE, data)
+            
+            web_url = get_public_url()
+            
+            # Tạo link bot con
+            name_slug = re.sub(r'[^a-zA-Z0-9]', '', username.lower())
+            if name_slug and _tunnel_url:
+                bot_link = f"https://{name_slug}.trycloudflare.com"
+            else:
+                bot_link = f"{web_url}/bot/{uidFrom}"
+            
+            msg = f"""✅ *TẠO BOT THÀNH CÔNG!*
 
-🔗 Web Server: {app_server}
-👤 Account: {botAccount}
-🔑 Password: {botPassword}
+👤 *Username:* {username}
+🔑 *Prefix:* {prefix}
+👤 *Account:* {botAccount}
+🔐 *Password:* {botPassword}
+🔗 *Link Bot:* {bot_link}
 
-💡 Dùng thông tin trên để đăng nhập bot!
-"""
-                client.sendMessage(Message(text=login_msg), author_id, ThreadType.USER)
-            except:
-                pass
-            return
-
-        if cmd == "list":
-            arr = BuildBotIndexList()
-            if not arr:
-                SendMention(client, "No bots found", author_id, thread_id, thread_type)
-                return
-
-            now = datetime.now()
-
-            def ParseTime(s):
-                try:
-                    return datetime.strptime(str(s), "%H:%M:%S-%d/%m/%Y")
-                except:
-                    return None
-
-            def StatusText(b):
-                if "isActived" not in b:
-                    return "Non Active"
-                exp = ParseTime(b.get("expiredTime"))
-                if exp and now > exp:
-                    return "Expired"
-                return "Active" if b.get("status") else "Inactive"
-
-            out = "All bots on server:\n"
-            for i, (b, _, __) in enumerate(arr, 1):
-                if not isinstance(b, dict):
-                    continue
-                if b.get("mainBot"):
-                    continue
-
-                st = StatusText(b)
-                out += f"{i}. {b.get('username')}{f' - {st}' if st else ''}\n"
-                out += f"   botIntId: {b.get('botIntId')}\n"
-                out += f"   Prefix: {b.get('prefix')}\n"
-                if b.get("expiredTime"):
-                    out += f"   Expires: {b.get('expiredTime')}\n"
-
-            SendMention(client, out, author_id, thread_id, thread_type)
-            return
-
-        if cmd == "group":
-            if not isMain:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Permission denied", sty_err)
-                return
-
-            sub = parts[2].lower() if len(parts) > 2 else ""
-            if sub == "set":
-                _reply(client, message_object, thread_id, thread_type,
-                    "Group link set", sty_info)
-                return
-
-            if sub == "notify":
-                cfg = loadBotManager()
-                dg = dataGroup(cfg)
-                cur = dg.get("sendNotify")
-                dg["sendNotify"] = False if cur is True else True
-                botManagerSave(cfg)
-                _reply(client, message_object, thread_id, thread_type,
-                    f"sendNotify: {dg['sendNotify']}", sty_info)
-                return
-
-            _reply(client, message_object, thread_id, thread_type,
-                "...", sty_warn)
-            return
-
-        if cmd == "update":
-            if not isMain:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Only mainBot can update the bot..!", sty_err)
-                return
-            if len(parts) < 4 and not hasMention:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Which bot will update?", sty_err)
-                return
-            _reply(client, message_object, thread_id, thread_type,
-                "Update login...", sty_info)
-            return
-
-        if cmd == "changeowner":
-            if not isMain:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Permission denied", sty_err)
-                return
-            _reply(client, message_object, thread_id, thread_type,
-                "Change owner...", sty_info)
+💡 Dùng: {cmdb} start 1 30d để start bot
+🔐 Login Bot: {bot_link}/login"""
+            
+            _reply(client, message_object, thread_id, thread_type, msg, sty_ok)
             return
 
         if cmd == "start":
-            if not isMain:
-                if len(parts) != 2:
+            if len(parts) < 4:
+                _reply(client, message_object, thread_id, thread_type, f"📋 {cmdb} start [index] [time]\n💡 {cmdb} start 1 30d", sty_info)
+                return
+            
+            try:
+                index = int(parts[2]) - 1
+                time_expr = parts[3]
+                bot = get_bot_by_index(index)
+                if not bot:
+                    _reply(client, message_object, thread_id, thread_type, "🚦 Không tìm thấy bot!", sty_warn)
                     return
-                bot, fp, items = GetOwnBot(client, message_object, author_id, thread_id, thread_type)
-                if not bot or not bot.get("expiredTime"):
+                
+                now = datetime.now()
+                if time_expr.lower() == "vinhvien":
+                    expired = "Vĩnh viễn"
+                elif time_expr.endswith('d'):
+                    days = int(time_expr[:-1])
+                    expired = (now + timedelta(days=days)).strftime('%d/%m/%Y')
+                elif time_expr.endswith('h'):
+                    hours = int(time_expr[:-1])
+                    expired = (now + timedelta(hours=hours)).strftime('%d/%m/%Y %H:%M')
+                else:
+                    _reply(client, message_object, thread_id, thread_type, "❌ Thời gian không hợp lệ! Dùng: 1d, 5h, 30m", sty_err)
                     return
+                
                 bot["status"] = True
-                with open(fp, "w", encoding="utf-8") as f:
-                    f.write(json.dumps(items, ensure_ascii=False, indent=4))
-                restartABot(bot)
-                _reply(client, message_object, thread_id, thread_type,
-                    "Bot has been started", sty_ok)
-                return
-
-            if len(parts) < 4 and not hasMention:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Target a bot to start and set time", sty_err)
-                return
-            timeExpr = parts[-1]
-            bot, fp, items = GetBotByIndexOrMention(client, message_object, author_id, thread_id, thread_type, token if len(parts) > 3 else None)
-            if not bot:
-                return
-            ActiveBot(bot, fp, items, timeExpr)
-            _reply(client, message_object, thread_id, thread_type,
-                f"Activated {bot.get('activedTime')} until {bot.get('expiredTime')} will expire..!", sty_ok)
-            return
-
-        if cmd == "restart":
-            if len(parts) < 3 and not hasMention:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Target a bot to restart", sty_err)
-                return
-            bot, fp, items = GetBotByIndexOrMention(client, message_object, author_id, thread_id, thread_type, token)
-            if not bot:
-                return
-            bot["status"] = True
-            if isinstance(fp, str) and fp.endswith(".json") and fp != mainLogin:
-                with open(fp, "w", encoding="utf-8") as f:
-                    f.write(json.dumps(items, ensure_ascii=False, indent=4))
-            restartABot(bot)
-            _reply(client, message_object, thread_id, thread_type,
-                f"Restarted {bot.get('username')}", sty_ok)
+                bot["isActived"] = True
+                bot["activedTime"] = now.strftime("%H:%M:%S-%d/%m/%Y")
+                bot["expiredTime"] = expired
+                save_bot(bot)
+                
+                success, msg = start_bot_real(bot)
+                if success:
+                    _reply(client, message_object, thread_id, thread_type, f"✅ Đã start {bot.get('username')}\n⏰ {expired}", sty_ok)
+                else:
+                    _reply(client, message_object, thread_id, thread_type, f"⚠️ {msg}", sty_warn)
+            except Exception as e:
+                _reply(client, message_object, thread_id, thread_type, f"❌ {str(e)[:80]}", sty_err)
             return
 
         if cmd == "stop":
-            if len(parts) < 3 and not hasMention:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Target a bot to stop", sty_err)
+            if len(parts) < 3:
+                _reply(client, message_object, thread_id, thread_type, f"📋 {cmdb} stop [index]", sty_info)
                 return
-            bot, fp, items = GetBotByIndexOrMention(client, message_object, author_id, thread_id, thread_type, token)
-            if not bot:
+            try:
+                index = int(parts[2]) - 1
+                bot = get_bot_by_index(index)
+                if not bot:
+                    _reply(client, message_object, thread_id, thread_type, "🚦 Không tìm thấy bot!", sty_warn)
+                    return
+                bot_id = bot.get("botIntId")
+                stop_bot_real_by_id(bot_id)
+                bot["status"] = False
+                bot["isActived"] = False
+                save_bot(bot)
+                _reply(client, message_object, thread_id, thread_type, f"🛑 Đã stop {bot.get('username')}", sty_warn)
+            except Exception as e:
+                _reply(client, message_object, thread_id, thread_type, f"❌ {str(e)[:80]}", sty_err)
+            return
+
+        if cmd == "restart":
+            if len(parts) < 3:
+                _reply(client, message_object, thread_id, thread_type, f"📋 {cmdb} restart [index]", sty_info)
                 return
-            StopBot(bot, fp, items)
-            _reply(client, message_object, thread_id, thread_type,
-                "Stopped", sty_ok)
+            try:
+                index = int(parts[2]) - 1
+                bot = get_bot_by_index(index)
+                if not bot:
+                    _reply(client, message_object, thread_id, thread_type, "🚦 Không tìm thấy bot!", sty_warn)
+                    return
+                bot_id = bot.get("botIntId")
+                stop_bot_real_by_id(bot_id)
+                time.sleep(0.5)
+                bot["status"] = True
+                bot["isActived"] = True
+                save_bot(bot)
+                success, msg = start_bot_real(bot)
+                if success:
+                    _reply(client, message_object, thread_id, thread_type, f"🔄 Đã restart {bot.get('username')}", sty_ok)
+                else:
+                    _reply(client, message_object, thread_id, thread_type, f"⚠️ {msg}", sty_warn)
+            except Exception as e:
+                _reply(client, message_object, thread_id, thread_type, f"❌ {str(e)[:80]}", sty_err)
             return
 
         if cmd == "delete":
-            if len(parts) < 3 and not hasMention:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Which one will bye the server?", sty_err)
+            if len(parts) < 3:
+                _reply(client, message_object, thread_id, thread_type, f"📋 {cmdb} delete [index]", sty_info)
                 return
-            bot, fp, _ = GetBotByIndexOrMention(client, message_object, author_id, thread_id, thread_type, token)
-            if not bot:
-                return
-            if fp == mainLogin:
-                _reply(client, message_object, thread_id, thread_type,
-                    "Cannot delete main bot", sty_err)
-                return
-            if not DeleteBot(bot, fp):
-                _reply(client, message_object, thread_id, thread_type,
-                    "Delete failed", sty_err)
-                return
-            _reply(client, message_object, thread_id, thread_type,
-                "Bot deleted from the system", sty_ok)
+            try:
+                index = int(parts[2]) - 1
+                bot = get_bot_by_index(index)
+                if not bot:
+                    _reply(client, message_object, thread_id, thread_type, "🚦 Không tìm thấy bot!", sty_warn)
+                    return
+                bot_id = bot.get("botIntId")
+                stop_bot_real_by_id(bot_id)
+                data = json_load(LOGIN_FILE) or {}
+                dataBot = data.get("dataBot", {})
+                login_file = dataBot.get(str(bot_id))
+                if login_file:
+                    login_path = os.path.join(MULTIBOT_DIR, login_file)
+                    if os.path.exists(login_path):
+                        os.remove(login_path)
+                delete_bot_by_id(bot_id)
+                _reply(client, message_object, thread_id, thread_type, f"🗑️ Đã xóa {bot.get('username')}", sty_ok)
+            except Exception as e:
+                _reply(client, message_object, thread_id, thread_type, f"❌ {str(e)[:80]}", sty_err)
             return
 
-        return
+        if cmd == "prefix":
+            if len(parts) < 3:
+                _reply(client, message_object, thread_id, thread_type, f"📋 {cmdb} prefix [new_prefix]", sty_info)
+                return
+            new_prefix = parts[2]
+            bot = get_bot_by_uid(author_id)
+            if not bot:
+                _reply(client, message_object, thread_id, thread_type, "🚦 Bạn chưa có bot!", sty_warn)
+                return
+            old_prefix = bot.get("prefix", "?")
+            bot["prefix"] = new_prefix
+            save_bot(bot)
+            _reply(client, message_object, thread_id, thread_type, f"✅ Đổi prefix: {old_prefix} → {new_prefix}", sty_ok)
+            return
+
+        _reply(client, message_object, thread_id, thread_type, f"❌ Lệnh {cmd} không hỗ trợ!\n💡 {cmdb} để xem hướng dẫn", sty_err)
 
     except Exception as e:
-        _reply(client, message_object, thread_id, thread_type,
-            f"Error: {str(e)}", sty_err)
-
-# ============================================================
-# LOAD
-# ============================================================
+        _reply(client, message_object, thread_id, thread_type, f"❌ {str(e)[:80]}", sty_err)
 
 def Kryzis():
-    return {'mybot': BotManagerCommand}
+    return {'mybot': handle_mybot}

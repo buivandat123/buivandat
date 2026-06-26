@@ -374,10 +374,9 @@ class BlockedCommandStub:
 #  MAIN BOT
 # ══════════════════════════════════════════════════════
 class MainBot(ZaloAPI):
-    def __init__(self, api_key, secret_key, imei, session_cookies, prefix=None):
+    def __init__(self, api_key, secret_key, imei, session_cookies):
         super().__init__(api_key, secret_key, imei, session_cookies)
-        # ✅ SỬA: Cho phép bot con dùng prefix riêng
-        self.settings = {"prefix": prefix if prefix else PREFIX}
+        self.settings = {"prefix": PREFIX}
         self.ADMIN = str(ADMIN)
         self.ADM = []
         self.duyetbox_data = {}
@@ -406,11 +405,7 @@ class MainBot(ZaloAPI):
             raise RuntimeError("Không xác định được UID bot.")
 
         self.command_handler = CommandHandler(self)
-        logger.info(f"✅ [{self.ns('name')}] UID: {self.uid} | Prefix: {self.settings.get('prefix')}")
-
-    def get_bot_prefix(self):
-        """Lấy prefix của bot (cho bot con)"""
-        return self.settings.get("prefix", PREFIX)
+        logger.info(f"✅ [{self.ns('name')}] UID: {self.uid}")
 
     def ns(self, key, fb=""):
         v = self._ns.get(key, fb)

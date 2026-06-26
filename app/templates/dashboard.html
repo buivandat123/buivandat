@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-dark text-white">
+    <nav class="navbar navbar-dark bg-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand" href="/">🤖 Bot Manager</a>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/logout">Đăng xuất</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h2>📊 Dashboard</h2>
+        <hr>
+        
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-secondary">
+                    <div class="card-body text-center">
+                        <h5>Tổng bot</h5>
+                        <h2 id="total-bots" class="text-primary">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-secondary">
+                    <div class="card-body text-center">
+                        <h5>Đang chạy</h5>
+                        <h2 id="active-bots" class="text-success">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-secondary">
+                    <div class="card-body text-center">
+                        <h5>Đã tắt</h5>
+                        <h2 id="inactive-bots" class="text-danger">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-secondary">
+                    <div class="card-body text-center">
+                        <h5>Main bot</h5>
+                        <h2 id="main-bots" class="text-warning">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-secondary">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tên</th>
+                                <th>ID</th>
+                                <th>Prefix</th>
+                                <th>Loại</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bot-list">
+                            <tr><td colspan="7" class="text-center">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    async function loadBots() {
+        try {
+            const resp = await fetch('/api/bots');
+            const data = await resp.json();
+            if (data.ok) {
+                const bots = data.bots;
+                let total=0, active=0, inactive=0, main=0;
+                let html = '';
+                bots.forEach((bot, i) => {
+                    const status = bot.status ? '🟢 Đang chạy' : '🔴 Đã tắt';
+                    const cls = bot.status ? 'text-success' : 'text-danger';
+                    const type = bot.mainBot ? '<span class="badge bg-warning">MAIN</span>' : '<span class="badge bg-primary">SUB</span>';
+                    if (bot.mainBot) main++;
+                    if (bot.status) active++; else inactive++;
+                    total++;
+                    html += `
+                        <tr>
+                            <td>${i+1}</td>
+                            <td>${bot.username || 'Unknown'}</td>
+                            <td><code>${bot.botIntId || bot.imei || 'N/A'}</code></td>
+                            <td><code>${bot.prefix || '?'}</code></td>
+                            <td>${type}</td>
+                            <td class="${cls}">${status}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success" onclick="actionBot('${bot.botIntId || bot.imei}','start')"><i class="fas fa-play"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="actionBot('${bot.botIntId || bot.imei}','stop')"><i class="fas fa-stop"></i></button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="actionBot('${bot.botIntId || bot.imei}','restart')"><i class="fas fa-sync"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteBot('${bot.botIntId || bot.imei}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('bot-list').innerHTML = html;
+                document.getElementById('total-bots').textContent = total;
+                document.getElementById('active-bots').textContent = active;
+                document.getElementById('inactive-bots').textContent = inactive;
+                document.getElementById('main-bots').textContent = main;
+            }
+        } catch(e) {
+            document.getElementById('bot-list').innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>`;
+        }
+    }
+    async function actionBot(id, action) {
+        if(!confirm(`Xác nhận ${action} bot?`)) return;
+        try {
+            const resp = await fetch('/api/bot/action', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({bot_id:id, action:action})
+            });
+            const data = await resp.json();
+            if(data.ok) { alert('✅ Thành công!'); loadBots(); }
+            else alert('❌ Lỗi: '+data.error);
+        } catch(e) { alert('❌ Lỗi kết nối'); }
+    }
+    async function deleteBot(id) {
+        if(!confirm('⚠️ Xóa bot? Không thể hoàn tác!')) return;
+        try {
+            const resp = await fetch('/api/bot/delete', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({bot_id:id})
+            });
+            const data = await resp.json();
+            if(data.ok) { alert('🗑️ Đã xóa!'); loadBots(); }
+            else alert('❌ Lỗi: '+data.error);
+        } catch(e) { alert('❌ Lỗi kết nối'); }
+    }
+    loadBots();
+    setInterval(loadBots, 30000);
+    </script>
+</body>
+</html>

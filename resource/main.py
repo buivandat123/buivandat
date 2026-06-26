@@ -5,13 +5,15 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageDraw, ImageFont
 
+from flask import Flask
 from zlapi import ZaloAPI
 from zlapi.models import Message, MultiMsgStyle, MessageStyle, ThreadType
 from zlapi.logging import Logging
 
 from asset.config import API_KEY, SECRET_KEY, IMEI, SESSION_COOKIES, ADMIN, PREFIX
-from LIGHT import CommandHandler, check_is_admin, schedule_delete, get_delete_delay
+from Kryzis import CommandHandler, check_is_admin, schedule_delete, get_delete_delay
 from modules.rs import send_reset_success_message
+from modules.scl import Kryzis as scl_module, user_states as scl_user_states, handle_message as scl_handle_message
 from modules.lqskin import handle_skin_choice, user_states
 from modules.sleep import update_activity, is_sleeping, wake_up
 from modules.mute import is_muted
@@ -19,6 +21,45 @@ from modules.kw import on_message as kw_on_message
 
 logger = Logging()
 executor = ThreadPoolExecutor(max_workers=12)
+
+# ─── FLASK WEB SERVER ─────────────────────────────────
+import re as _re
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+web_app = Flask(
+    __name__,
+    template_folder=os.path.join(_BASE_DIR, 'app/templates'),
+    static_folder=os.path.join(_BASE_DIR, 'app/static'),
+)
+web_app.secret_key = "zbug_secret_key_2024"
+from app.core.server import init_routes as _init_routes
+_init_routes(web_app)
+
+def start_cloudflare_tunnel():
+    try:
+        check = subprocess.run(["which", "cloudflared"], capture_output=True, text=True)
+        if check.returncode != 0:
+            logger.warning("⚠️ cloudflared chưa cài. Cài: pkg install cloudflared")
+            return
+        proc = subprocess.Popen(
+            ["cloudflared", "tunnel", "--url", "http://localhost:5000"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1,
+        )
+        for line in iter(proc.stdout.readline, ''):
+            match = _re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
+            if match:
+                logger.info(f"✅ Cloudflare URL: {match.group(0)}")
+                print(f"\n✅ Cloudflare Tunnel URL: {match.group(0)}")
+                print("📌 Dùng link này để truy cập web\n")
+                break
+    except Exception as e:
+        logger.error(f"❌ Cloudflare: {e}")
+
+def start_web_server():
+    try:
+        web_app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    except Exception as e:
+        logger.error(f"❌ Web server lỗi: {e}")
 
 # ─── FILES ────────────────────────────────────────────
 NOTIFY_FILE = "modules/cache/notify.json"
@@ -373,9 +414,10 @@ class BlockedCommandStub:
 #  MAIN BOT
 # ══════════════════════════════════════════════════════
 class MainBot(ZaloAPI):
-    def __init__(self, api_key, secret_key, imei, session_cookies):
+    def __init__(self, api_key, secret_key, imei, session_cookies, prefix=None):
         super().__init__(api_key, secret_key, imei, session_cookies)
-        self.settings = {"prefix": PREFIX}
+        # ✅ SỬA: Cho phép bot con dùng prefix riêng
+        self.settings = {"prefix": prefix if prefix else PREFIX}
         self.ADMIN = str(ADMIN)
         self.ADM = []
         self.duyetbox_data = {}
@@ -404,7 +446,11 @@ class MainBot(ZaloAPI):
             raise RuntimeError("Không xác định được UID bot.")
 
         self.command_handler = CommandHandler(self)
-        logger.info(f"✅ [{self.ns('name')}] UID: {self.uid}")
+        logger.info(f"✅ [{self.ns('name')}] UID: {self.uid} | Prefix: {self.settings.get('prefix')}")
+
+    def get_bot_prefix(self):
+        """Lấy prefix của bot (cho bot con)"""
+        return self.settings.get("prefix", PREFIX)
 
     def ns(self, key, fb=""):
         v = self._ns.get(key, fb)
@@ -956,16 +1002,16 @@ class MainBot(ZaloAPI):
     # ══════════════════════════════════════════════════
     def onEvent(self, event_data, event_type):
         try:
-            if hasattr(event_data, "updateType") and event_data.updateType == 10:
+            if hasattr(event_data, "updateType") and event_data.updateType in (10, 11):
                 tid = str(getattr(event_data, "groupId", ""))
-                members = getattr(event_data, "members", [])
-                for m in members:
-                    uid = str(getattr(m, "userId", getattr(m, "id", "")))
-                    if uid:
-                        send_welcome(self, tid, uid)
-        except:
-            pass
-        pass
+                if tid in self._approve:
+                    for m in getattr(event_data, "members", []):
+                        u = str(getattr(m, "userId", getattr(m, "id", "")))
+                        if u:
+                            try:
+                                self.acceptUserIntoGroup(u, tid)
+                            except:
+                                pass
             if hasattr(event_data, "updateType") and event_data.updateType in (6, 7):
                 tid = str(getattr(event_data, "groupId", ""))
                 if tid in self._welcome:
@@ -1030,6 +1076,9 @@ class MainBot(ZaloAPI):
         if message_text.strip().isdigit():
             if handle_skin_choice(message_text.strip(), message_object, thread_id, thread_type, author_id, self):
                 return
+            if author_id in scl_user_states:
+                scl_handle_message(message_text, message_object, thread_id, thread_type, author_id, self)
+                return
 
         prefix = self.settings.get("prefix", PREFIX)
         is_admin = check_is_admin(author_id)
@@ -1050,10 +1099,7 @@ class MainBot(ZaloAPI):
                 return
 
         specials = {
-            prefix + "bot": self._handle_botonoff_cmd,
             prefix + "notify": self._handle_notify_cmd,
-            prefix + "ns": self._handle_ns_cmd,
-            prefix + "mute": self._handle_mute_cmd,
             prefix + "approve": self._handle_approve_cmd,
             prefix + "kick": self._handle_kick_cmd,
             prefix + "warn": self._handle_warn_cmd,
@@ -1081,12 +1127,31 @@ class MainBot(ZaloAPI):
 #  START
 # ══════════════════════════════════════════════════════
 if __name__ == "__main__":
+    os.makedirs("asset/config/multibot", exist_ok=True)
+    os.makedirs("data", exist_ok=True)
+
     if os.path.exists("session.json"):
         try:
             os.remove("session.json")
             logger.warning("Xoá session.json cũ.")
         except:
             pass
+
+    print("""
+╔═══════════════════════════════════════════╗
+║   🚀 BOT MANAGER WEB SERVER              ║
+║   http://localhost:5000                  ║
+║   Admin: /admin  (pass: admin123)        ║
+║   Cloudflare: tự động tạo link public    ║
+╚═══════════════════════════════════════════╝
+    """)
+
+    # Khởi động web server + Cloudflare trong thread nền
+    threading.Thread(target=start_web_server, daemon=True, name="WebServer").start()
+    threading.Thread(target=start_cloudflare_tunnel, daemon=True, name="Cloudflare").start()
+    logger.info("🌐 Web server đang khởi động tại http://localhost:5000")
+
+    # Khởi động bot (blocking)
     try:
         client = MainBot(API_KEY, SECRET_KEY, IMEI, SESSION_COOKIES)
         send_reset_success_message(client)
@@ -1095,6 +1160,7 @@ if __name__ == "__main__":
         logger.error(f"Lỗi: {e}")
         traceback.print_exc()
         sys.exit(1)
+
 
 def _create_bot_folder_stub(bot_id, bot_name, bot_prefix, admin_id, bot_imei, bot_cookies):
     folder = os.path.join(BOTS_DIR, bot_name)

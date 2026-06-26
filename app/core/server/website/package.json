@@ -1,0 +1,12 @@
+{
+  "name": "ebug-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:frontend": "npm --prefix ./frontend install",
+    "dev": "npm --prefix ./frontend run dev",
+    "build": "npm --prefix ./frontend run build",
+    "preview": "npm --prefix ./frontend run preview"
+  }
+}
