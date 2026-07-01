@@ -4,30 +4,76 @@
             "username": "Bùi Văn Đạt",
             "login": 24,
             "botIntId": "696983558841863982",
-            "imei": "84b2fd2b-4db7-439f-97ca-8a05b205671d-a16ddaab909d2cf27fce353f26dd2ff2",
-            "prefix": "-",
+            "imei": "950c2d5e-8059-4e76-a05e-e87505dc7aee-a16ddaab909d2cf27fce353f26dd2ff2",
+            "prefix": "~",
             "sessionCookies": {
-                "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qJ5Ho2eG_iNLFqpOT72xbD8T1penVG",
-                "zpdid": "41RxbrFsgJiG5v6KKlh4E1KTbvvH-i4s",
-                "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KLL4cz1xMuNKmHJOLccBmHQ25DeNwOc244UM7uC",
+                "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qJPKoYOS-itRD4ZGUdk_dDmM0penVG",
+                "zpdid": "41RubbFrhZyV6PQGNVJ3EnyHd9PQ_CWy",
+                "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KLI5srDuMeLNmXNOrMgAm1K15HXLwee05u4L6TN8dq",
                 "_zlang": "vn",
-                "zpsid": "eMKnVcAlVqAZUYmFGw5m1yylUrLQe7G3pIraKK7TB0kC9Y0YHSbF2ByUI28mvJCtv3auOXAnS37uVpyb4l1LBFCh6GCVqt4qqYW150EhSoZLTImp79f35m",
-                "__zi": "3000.QOBlzDCV2uGerkFzm0LJq6FNv_d21nxKOTYf-iSD6TTdtghx.1",
-                "zpw_sek": "Ye_R.451751557.a0.YLRBUo1JVGMbVP0V0LDz1Ljn66u2QLz7PMSeRMa5Fszu10z0OX8KQ1SGILrNRa0dNIB4KNC5kW-oKiwB6Zbz1G"
+                "zpsid": "eMKnVcAlVqAZUYmFOhOcNEuuBGfwkojRwpSx2MUvN5ESSoPsS9D-ORv00LSgZaLXpL0gKmwrLLJFUWDk3BSGGDHgMdGHv2n6XcegOcAXTb68VY1MP9vuH0",
+                "__zi": "3000.QOBlzDCV2uGerkFzm0LJr6BRxlh52XVNPjMW_iK27TfZqQdm.1",
+                "zpw_sek": "y86F.455698236.a0.I9oYYcMDAx_c-AxI-v-7oQ6zugBufQNzlgt3iQBgiQMFw_saZUhWlfFmxxYjehhhfpHwLb79GCD8dX0MvVM7oG"
             },
             "clientBotId": "696983558841863982",
+            "adminId": "696983558841863982",
             "mainBot": false,
             "status": true,
             "isActived": true,
             "approved": true,
-            "botAccount": "bùivănđạt71",
-            "botPassword": "403827",
-            "activedTime": "18:24:23-26/06/2026",
-            "expiredTime": "27/06/2026",
-            "filePath": "1-login.json"
+            "folder": "bot_1",
+            "filePath": "bot_1.json"
+        },
+        {
+            "username": "Bùi Văn Đạt",
+            "login": 24,
+            "botIntId": "696983558841863982",
+            "imei": "950c2d5e-8059-4e76-a05e-e87505dc7aee-a16ddaab909d2cf27fce353f26dd2ff2",
+            "prefix": "~",
+            "sessionCookies": {
+                "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qJPKoYOS-itRD4ZGUdk_dDmM0penVG",
+                "zpdid": "41RubbFrhZyV6PQGNVJ3EnyHd9PQ_CWy",
+                "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KLI5srDuMeLNmXNOrMgAm1K15HXLwee05u4L6TN8dq",
+                "_zlang": "vn",
+                "zpsid": "eMKnVcAlVqAZUYmFOhOcNEuuBGfwkojRwpSx2MUvN5ESSoPsS9D-ORv00LSgZaLXpL0gKmwrLLJFUWDk3BSGGDHgMdGHv2n6XcegOcAXTb68VY1MP9vuH0",
+                "__zi": "3000.QOBlzDCV2uGerkFzm0LJr6BRxlh52XVNPjMW_iK27TfZqQdm.1",
+                "zpw_sek": "y86F.455698236.a0.I9oYYcMDAx_c-AxI-v-7oQ6zugBufQNzlgt3iQBgiQMFw_saZUhWlfFmxxYjehhhfpHwLb79GCD8dX0MvVM7oG"
+            },
+            "clientBotId": "696983558841863982",
+            "adminId": "696983558841863982",
+            "mainBot": false,
+            "status": false,
+            "isActived": false,
+            "approved": true,
+            "folder": "bot_3",
+            "filePath": "bot_3.json"
+        },
+        {
+            "username": "Bùi Văn Đạt",
+            "login": 24,
+            "botIntId": "696983558841863982",
+            "imei": "950c2d5e-8059-4e76-a05e-e87505dc7aee-a16ddaab909d2cf27fce353f26dd2ff2",
+            "prefix": "~",
+            "sessionCookies": {
+                "nl_b04af40bb0e193acf8a9877592394ada": "tzaoLC8i6lt5qJPKoYOS-itRD4ZGUdk_dDmM0penVG",
+                "zpdid": "41RubbFrhZyV6PQGNVJ3EnyHd9PQ_CWy",
+                "zlogin_session": "kW4JGLyjCnIxFnDDLXTbH-Tj2KLI5srDuMeLNmXNOrMgAm1K15HXLwee05u4L6TN8dq",
+                "_zlang": "vn",
+                "zpsid": "eMKnVcAlVqAZUYmFOhOcNEuuBGfwkojRwpSx2MUvN5ESSoPsS9D-ORv00LSgZaLXpL0gKmwrLLJFUWDk3BSGGDHgMdGHv2n6XcegOcAXTb68VY1MP9vuH0",
+                "__zi": "3000.QOBlzDCV2uGerkFzm0LJr6BRxlh52XVNPjMW_iK27TfZqQdm.1",
+                "zpw_sek": "y86F.455698236.a0.I9oYYcMDAx_c-AxI-v-7oQ6zugBufQNzlgt3iQBgiQMFw_saZUhWlfFmxxYjehhhfpHwLb79GCD8dX0MvVM7oG"
+            },
+            "clientBotId": "696983558841863982",
+            "adminId": "696983558841863982",
+            "mainBot": false,
+            "status": false,
+            "isActived": false,
+            "approved": true,
+            "folder": "bot_1",
+            "filePath": "bot_1.json"
         }
     ],
     "dataBot": {
-        "696983558841863982": "1-login.json"
+        "696983558841863982": "bot_1.json"
     }
 }

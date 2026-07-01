@@ -5,19 +5,144 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bot Dashboard</title>
   <link rel="stylesheet" href="/components/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    .bot-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: bold; }
+    .bot-status.running { background: #d1fae5; color: #065f46; }
+    .bot-status.stopped { background: #fee2e2; color: #991b1b; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+    .btn-group .Btn { flex: 1; min-width: 80px; text-align: center; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .info-item { background: #f9fafb; padding: 10px; border-radius: 6px; }
+    .info-item label { font-size: 12px; color: #6b7280; display: block; }
+    .info-item value { font-weight: 600; }
+  </style>
 </head>
 <body class="Dash">
   <div class="DashLayout">
     <header class="DashHeader">
       <div class="DashLogo"><i class="fa-solid fa-robot"></i> Bot Panel</div>
-      <a href="/bot/logout" class="Btn Danger">Logout</a>
+      <button class="Btn Danger" onclick="logout()">Logout</button>
     </header>
     <main class="DashMain">
       <section class="DashSection">
-        <h2>Bot Dashboard</h2>
-        <p>Thông tin bot sẽ hiển thị ở đây...</p>
+        <h2><i class="fa-solid fa-server"></i> Bot Control</h2>
+        <div id="botInfo">
+          <div class="info-grid">
+            <div class="info-item"><label>Username</label><value id="username">-</value></div>
+            <div class="info-item"><label>Bot ID</label><value id="botId">-</value></div>
+            <div class="info-item"><label>Prefix</label><value id="prefix">-</value></div>
+            <div class="info-item"><label>Status</label><value id="status"><span class="bot-status">Loading...</span></value></div>
+          </div>
+          <div class="btn-group">
+            <button class="Btn Success" id="btnStart" onclick="startBot()"><i class="fa-solid fa-play"></i> Start</button>
+            <button class="Btn Danger" id="btnStop" onclick="stopBot()"><i class="fa-solid fa-stop"></i> Stop</button>
+            <button class="Btn Warn" id="btnRestart" onclick="restartBot()"><i class="fa-solid fa-rotate"></i> Restart</button>
+          </div>
+          <div id="message" style="margin-top:10px; padding:10px; border-radius:6px; display:none;"></div>
+        </div>
       </section>
     </main>
   </div>
+  <script>
+    let botData = {};
+
+    async function apiCall(url, method = 'GET', body = null) {
+      const options = { method, credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+      if (body) options.body = JSON.stringify(body);
+      const res = await fetch(url, options);
+      return res.json();
+    }
+
+    async function loadBotInfo() {
+      try {
+        const data = await apiCall('/api/bot/info');
+        if (data.ok) {
+          botData = data.bot;
+          document.getElementById('username').textContent = data.bot.username || '-';
+          document.getElementById('botId').textContent = data.bot.botIntId || '-';
+          document.getElementById('prefix').textContent = data.bot.prefix || '-';
+          updateStatus(data.is_running);
+        } else {
+          showMessage('Lỗi tải thông tin bot', 'error');
+        }
+      } catch (e) {
+        showMessage('Lỗi kết nối', 'error');
+      }
+    }
+
+    function updateStatus(isRunning) {
+      const el = document.getElementById('status');
+      if (isRunning) {
+        el.innerHTML = '<span class="bot-status running"><i class="fa-solid fa-circle"></i> Đang chạy</span>';
+      } else {
+        el.innerHTML = '<span class="bot-status stopped"><i class="fa-solid fa-circle"></i> Đã dừng</span>';
+      }
+    }
+
+    function showMessage(text, type = 'info') {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.style.display = 'block';
+      el.style.background = type === 'error' ? '#fee2e2' : type === 'success' ? '#d1fae5' : '#fef3c7';
+      el.style.color = type === 'error' ? '#991b1b' : type === 'success' ? '#065f46' : '#92400e';
+      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    async function startBot() {
+      try {
+        const data = await apiCall('/api/bot/run', 'POST');
+        if (data.ok) {
+          showMessage('✅ Bot đã được khởi động!', 'success');
+          loadBotInfo();
+        } else {
+          showMessage('❌ ' + (data.error || 'Không thể start bot'), 'error');
+        }
+      } catch (e) {
+        showMessage('❌ Lỗi kết nối', 'error');
+      }
+    }
+
+    async function stopBot() {
+      if (!confirm('Bạn có chắc muốn dừng bot?')) return;
+      try {
+        const data = await apiCall('/api/bot/stop', 'POST');
+        if (data.ok) {
+          showMessage('🛑 Bot đã được dừng!', 'success');
+          loadBotInfo();
+        } else {
+          showMessage('❌ ' + (data.error || 'Không thể stop bot'), 'error');
+        }
+      } catch (e) {
+        showMessage('❌ Lỗi kết nối', 'error');
+      }
+    }
+
+    async function restartBot() {
+      if (!confirm('Bạn có chắc muốn restart bot?')) return;
+      try {
+        const data = await apiCall('/api/bot/restart', 'POST');
+        if (data.ok) {
+          showMessage('🔄 Bot đang được restart!', 'info');
+          loadBotInfo();
+        } else {
+          showMessage('❌ ' + (data.error || 'Không thể restart bot'), 'error');
+        }
+      } catch (e) {
+        showMessage('❌ Lỗi kết nối', 'error');
+      }
+    }
+
+    async function logout() {
+      await apiCall('/api/auth/logout', 'POST');
+      window.location.href = '/';
+    }
+
+    // Load info khi vào trang
+    loadBotInfo();
+
+    // Auto refresh mỗi 10s
+    setInterval(loadBotInfo, 10000);
+  </script>
 </body>
 </html>

@@ -1,6 +1,7 @@
-# app/core/server/live/apiBot.py
+# app/core/server/live/apiBot.py - FIX PREFIX
 from ..client import *
 import json
+import threading
 
 @app.get("/api/bot/info")
 def BotInfo():
@@ -13,7 +14,16 @@ def BotInfo():
         bot, loginFile, _ = AccountBot(account)
         if not bot:
             return Jsonfailed("Account not found", 404)
-        return jsonify({"ok": True, "bot": bot, "file": loginFile})
+        
+        bot_id = bot.get("botIntId")
+        is_running = is_bot_running(bot_id)
+        
+        return jsonify({
+            "ok": True, 
+            "bot": bot, 
+            "file": loginFile,
+            "is_running": is_running
+        })
 
 @app.post("/api/bot/run")
 def BotRun():
@@ -36,11 +46,23 @@ def BotRun():
         botIntId = bot.get("botIntId")
         username = bot.get("username")
 
-        threading.Thread(
-            target=RunBot,
-            args=(imei, sc, prefix, False, username, botIntId, True, os.path.join("assets", "config", "multibot", str(loginFile))),
-            daemon=True
-        ).start()
+        def run_bot_thread():
+            try:
+                from app.core.login.login import RunBot
+                RunBot(
+                    Imei=imei,
+                    SessionCookies=sc,
+                    Prefix=prefix,
+                    MainBot=False,
+                    Username=username,
+                    BotIntId=botIntId,
+                    Status=True,
+                    FilePath=os.path.join("assets", "config", "multibot", str(loginFile))
+                )
+            except Exception as e:
+                print(f"[Web] Lỗi start bot: {e}")
+
+        threading.Thread(target=run_bot_thread, daemon=True).start()
 
         bot["status"] = True
         bot["isActived"] = True
@@ -64,8 +86,11 @@ def BotStop():
         if not bot:
             return Jsonfailed("Account not found", 404)
 
+        bot_id = bot.get("botIntId")
         offbot(bot)
+        
         bot["status"] = False
+        bot["isActived"] = False
         try:
             _, meta = ReadJSONMeta(path)
             WriteBotANDMeta(path, bot, meta)
@@ -114,17 +139,21 @@ def BotPrefix():
         return Jsonfailed("Missing newPrefix")
 
     with Lock:
+        # Tìm bot theo account
         bot, loginFile, path = AccountBot(account)
         if not bot:
             return Jsonfailed("Account not found", 404)
 
+        # Cập nhật prefix
         bot["prefix"] = newPrefix
         try:
             _, meta = ReadJSONMeta(path)
             WriteBotANDMeta(path, bot, meta)
-        except:
-            pass
+        except Exception as e:
+            print(f"[Prefix] Lỗi lưu: {e}")
+            return Jsonfailed("Không thể lưu prefix", 500)
 
+        # Cập nhật cho bot đang chạy
         target = TargetGet(str(bot.get("botIntId")), bool(bot.get("mainBot", False)))
         try:
             if target is not None:

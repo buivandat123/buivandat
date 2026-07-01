@@ -115,3 +115,15 @@ def Rsbot(bot, loginFile):
 def offbot(bot):
     print(f"[offbot] Stopping bot: {bot.get('username')}")
     return
+
+def is_bot_running(bot_id):
+    """Kiểm tra bot có đang chạy không (từ _bot_threads)"""
+    try:
+        from modules.mybot import _bot_threads
+        if bot_id in _bot_threads:
+            bot = _bot_threads[bot_id].get("bot")
+            if bot and hasattr(bot, "listening"):
+                return bot.listening
+        return False
+    except:
+        return False

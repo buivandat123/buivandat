@@ -12,7 +12,6 @@ from zlapi.logging import Logging
 from asset.config import API_KEY, SECRET_KEY, IMEI, SESSION_COOKIES, ADMIN, PREFIX
 from Kryzis import CommandHandler, check_is_admin, schedule_delete, get_delete_delay
 from modules.rs import send_reset_success_message
-from modules.scl import Kryzis as scl_module, user_states as scl_user_states, handle_message as scl_handle_message
 from modules.lqskin import handle_skin_choice, user_states
 from modules.sleep import update_activity, is_sleeping, wake_up
 from modules.mute import is_muted
@@ -510,6 +509,102 @@ class MainBot(ZaloAPI):
             return s
         except:
             return {self.ADMIN}
+
+    def sendLocalFile(self, filepath, thread_id, thread_type, caption=""):
+        """
+        Gửi file/video lên Zalo
+        Sử dụng API chính thức của Zalo
+        """
+        try:
+            if not os.path.exists(filepath):
+                print(f"[sendLocalFile] File không tồn tại: {filepath}")
+                return False
+            
+            filename = os.path.basename(filepath)
+            file_size = os.path.getsize(filepath)
+            
+            print(f"[sendLocalFile] Đang gửi: {filename} ({file_size/1024/1024:.1f} MB)")
+            
+            # ===== CÁCH 1: Dùng sendFile (nếu có) =====
+            if hasattr(self, 'sendFile'):
+                try:
+                    result = self.sendFile(
+                        file_path=filepath,
+                        thread_id=thread_id,
+                        thread_type=thread_type,
+                        caption=caption
+                    )
+                    print(f"[sendLocalFile] Đã gửi bằng sendFile")
+                    return result
+                except Exception as e:
+                    print(f"[sendLocalFile] sendFile lỗi: {e}")
+            
+            # ===== CÁCH 2: Dùng uploadFile (nếu có) =====
+            if hasattr(self, 'uploadFile'):
+                try:
+                    result = self.uploadFile(
+                        filepath=filepath,
+                        thread_id=thread_id,
+                        thread_type=thread_type
+                    )
+                    print(f"[sendLocalFile] Đã gửi bằng uploadFile")
+                    return result
+                except Exception as e:
+                    print(f"[sendLocalFile] uploadFile lỗi: {e}")
+            
+            # ===== CÁCH 3: Dùng sendMessage với file_data =====
+            try:
+                with open(filepath, 'rb') as f:
+                    file_data = f.read()
+                
+                # Tạo message
+                msg = Message(text=caption or "📹 Video")
+                
+                # Gửi với file_data
+                # Một số phiên bản ZaloAPI hỗ trợ gửi file kèm message
+                if hasattr(self, 'sendMessage'):
+                    # Thử gửi với tham số file
+                    return self.sendMessage(
+                        msg, 
+                        thread_id=thread_id, 
+                        thread_type=thread_type,
+                        file=file_data,
+                        filename=filename
+                    )
+            except Exception as e:
+                print(f"[sendLocalFile] sendMessage file lỗi: {e}")
+            
+            # ===== CÁCH 4: Gửi bằng API trực tiếp =====
+            try:
+                # Đọc file
+                with open(filepath, 'rb') as f:
+                    file_data = f.read()
+                
+                # Gửi qua API của Zalo
+                # Phương thức này tùy thuộc vào zlapi bạn dùng
+                if hasattr(self, '_send_file'):
+                    return self._send_file(
+                        file_data=file_data,
+                        filename=filename,
+                        thread_id=thread_id,
+                        thread_type=thread_type,
+                        caption=caption
+                    )
+            except Exception as e:
+                print(f"[sendLocalFile] _send_file lỗi: {e}")
+            
+            print(f"[sendLocalFile] Không thể gửi file: {filename}")
+            return False
+            
+        except Exception as e:
+            print(f"[sendLocalFile] Lỗi: {e}")
+            return False
+    
+    def sendVideo(self, filepath, thread_id, thread_type, caption=""):
+        """
+        Gửi video lên Zalo (chuyên biệt)
+        """
+        return self.sendLocalFile(filepath, thread_id, thread_type, caption)
 
     # ══════════════════════════════════════════════════
     #  LỆNH: BOT ON/OFF

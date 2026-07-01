@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "typing_delay": 1,
+  "reply_delay": 3.0,
+  "auto_reply": "dạ",
+  "random_reply": [
+    "Mình đang bận chút, có gì nhắn sau nhé!",
+    "Hi bạn, mình sẽ trả lời sau!",
+    "Cảm ơn bạn đã nhắn tin!",
+    "Mình đang bận, để mình xử lý xong sẽ reply!"
+  ],
+  "use_random": false
+}

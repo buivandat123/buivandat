@@ -1,0 +1,4 @@
+Chào các bạn!
+Đây là tin nhắn spam
+Bot đang hoạt động!
+Hãy dùng .treo stop để dừng

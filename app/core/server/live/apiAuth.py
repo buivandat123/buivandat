@@ -6,13 +6,16 @@ import json
 adminUser = databaseReader().get("adminAcc") or "admin"
 adminPass = databaseReader().get("adminPass") or "admin123"
 
-@app.post("/api/auth/login")
+@app.route("/api/auth/login", methods=['GET', 'POST'])
 def AuthLogin():
+    if request.method == 'GET':
+        return jsonify({"ok": False, "error": "Method not allowed, use POST"}), 405
+    
     body = request.get_json(silent=True) or {}
     account = str(body.get("account") or "").strip()
     password = str(body.get("password") or "").strip()
     
-    print(f"[Auth] Login attempt: account={account}, password={password}")
+    print(f"[Auth] Login attempt: account={account}")
     
     if not account or not password:
         return Jsonfailed("Missing account/password")
@@ -23,40 +26,47 @@ def AuthLogin():
         session["botIntId"] = "admin-dashboard"
         session["loginFile"] = "admin"
         session["isAdmin"] = True
-        return jsonify({"ok": True, "account": session["account"], "botIntId": session["botIntId"], "isAdmin": True})
+        session["redirect"] = "/admin/dashboard"
+        return jsonify({
+            "ok": True, 
+            "account": session["account"], 
+            "botIntId": session["botIntId"], 
+            "isAdmin": True,
+            "redirect": "/admin/dashboard"
+        })
 
-    # Kiểm tra bot con - đọc từ login.json
+    # Kiểm tra bot con
     try:
         with open("asset/config/login.json", "r", encoding="utf-8") as f:
             data = json.load(f)
         
-        print(f"[Auth] Login data: {data}")
-        
         for bot in data.get("data", []):
             bot_account = bot.get("botAccount", "")
             bot_password = bot.get("botPassword", "")
-            print(f"[Auth] Checking: botAccount={bot_account}, botPassword={bot_password}")
             
             if SafeEq(account, bot_account) and SafeEq(password, bot_password):
+                bot_id = str(bot.get("botIntId") or "")
                 session["account"] = account
-                session["botIntId"] = str(bot.get("botIntId") or "")
+                session["botIntId"] = bot_id
                 session["loginFile"] = bot.get("filePath", "")
                 session["isAdmin"] = False
-                print(f"[Auth] Login success for bot: {account}")
+                session["redirect"] = f"/bot/{bot_id}/dashboard"
+                print(f"[Auth] Login success for bot: {account} -> /bot/{bot_id}/dashboard")
                 return jsonify({
                     "ok": True, 
                     "account": account, 
-                    "botIntId": session["botIntId"], 
+                    "botIntId": bot_id, 
                     "isAdmin": False,
-                    "username": bot.get("username", "")
+                    "username": bot.get("username", ""),
+                    "redirect": f"/bot/{bot_id}/dashboard"
                 })
     except Exception as e:
-        print(f"[Auth] Error reading login.json: {e}")
+        print(f"[Auth] Error: {e}")
         return Jsonfailed(f"Error: {str(e)}", 500)
 
     return Jsonfailed("Account not found", 404)
 
-@app.post("/api/auth/logout")
+@app.route("/api/auth/logout", methods=['GET', 'POST'])
 def AuthLogout():
     session.clear()
     return jsonify({"ok": True})
@@ -67,7 +77,7 @@ def AuthMe():
     if not acc:
         return jsonify({"ok": False})
 
-    if session.get("isAdmin") is True and str(acc) == adminUser:
+    if session.get("isAdmin") is True:
         return jsonify({
             "ok": True,
             "account": adminUser,
@@ -76,7 +86,6 @@ def AuthMe():
             "isAdmin": True
         })
 
-    # Lấy thông tin bot từ session
     botIntId = session.get("botIntId")
     try:
         with open("asset/config/login.json", "r", encoding="utf-8") as f:
